@@ -1,136 +1,80 @@
+using Back_End.Services.Interfaces;
+using Back_End.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
-using Back_End.Models;
-using Back_End.ViewModels;
-using Back_End.Data;
 
 namespace Back_End.Controllers
 {
+    [Authorize(Roles = "Adm")]
     [ApiController]
     [Route("api/[controller]")]
     public class AdmController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IAdmService _admService;
 
-        public AdmController(AppDbContext context)
+        public AdmController(IAdmService admService)
         {
-            _context = context;
+            _admService = admService;
         }
 
-        [HttpPost("criar")]
-        public IActionResult CriarAdm([FromBody] AdmViewModel model)
+        [AllowAnonymous]
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginViewModel loginVM)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var adm = new Adm
+            try
             {
-                Nome = model.Nome,
-                Telefone = model.Telefone,
-                CPF = model.CPF,
-                Email = model.Email,
-                Tipo = "Adm",
-                Login = model.Login
-            };
-
-            adm.DefinirSenha(model.Senha);
-            _context.Adms.Add(adm);
-            _context.SaveChanges();
-
-            return Ok(new { mensagem = "Administrador criado com sucesso!" });
-        }
-
-        [HttpGet]
-        [Authorize(Roles = "Adm")]
-        public IActionResult ListarAdms()
-        {
-            var adms = _context.Adms
-                .Select(a => new
-                {
-                    a.Id,
-                    a.Login,
-                    a.Nome,
-                    a.Email,
-                    a.Telefone,
-                    a.CPF
-                })
-                .ToList();
-
-            return Ok(adms);
-        }
-
-        [HttpGet("{id}")]
-        [Authorize(Roles = "Adm")]
-        public IActionResult BuscarAdmPorId(int id)
-        {
-            var adm = _context.Adms.FirstOrDefault(a => a.Id == id);
-
-            if (adm == null)
-                return NotFound(new { mensagem = "Administrador não encontrado." });
-
-            return Ok(new
+                var token = await _admService.Login(loginVM);
+                return Ok(new { token });
+            }
+            catch (Exception ex)
             {
-                adm.Id,
-                adm.Login,
-                adm.Nome,
-                adm.Email,
-                adm.Telefone,
-                adm.CPF
-            });
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
-        [HttpPut("{id}")]
-        [Authorize(Roles = "Adm")]
-        public IActionResult AtualizarAdm(int id, [FromBody] AdmViewModel model)
+        [HttpPost("eventos")]
+        public async Task<IActionResult> CriarEvento([FromForm] EventoViewModel model)
         {
-            var adm = _context.Adms.FirstOrDefault(a => a.Id == id);
-
-            if (adm == null)
-                return NotFound(new { mensagem = "Administrador não encontrado." });
-
-            adm.Login = model.Login;
-            adm.DefinirSenha(model.Senha);
-            adm.Nome = model.Nome;
-            adm.Telefone = model.Telefone;
-            adm.CPF = model.CPF;
-            adm.Email = model.Email;
-
-            _context.SaveChanges();
-
-            return Ok(new { mensagem = "Administrador atualizado com sucesso!" });
+            var admId = int.Parse(User.FindFirst("id")?.Value!);
+            var eventoId = await _admService.CriarEvento(model, admId);
+            return CreatedAtAction(nameof(EventoController.ObterPorId), "Evento", new { id = eventoId }, new { id = eventoId });
         }
 
-        [HttpPut("alterar-senha")]
-        [Authorize(Roles = "Adm")]
-        public IActionResult AlterarSenha([FromBody] AlterarSenhaViewModel model)
+        [HttpPut("eventos/{eventoId}/voluntarios")]
+        public async Task<IActionResult> EscalarVoluntarios(int eventoId, [FromBody] List<int> voluntariosIds)
         {
-            var id = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            var adm = _context.Adms.Find(id);
-
-            if (adm == null || !adm.Autenticar(model.SenhaAtual))
-                return Unauthorized(new { mensagem = "Senha atual incorreta." });
-
-            adm.DefinirSenha(model.NovaSenha);
-            _context.SaveChanges();
-
-            return Ok(new { mensagem = "Senha alterada com sucesso." });
+            var result = await _admService.EscalarVoluntarios(eventoId, voluntariosIds);
+            if (!result) return NotFound();
+            return Ok(new { message = "Voluntários escalados com sucesso" });
         }
 
-        [HttpDelete("{id}")]
-        [Authorize(Roles = "Adm")]
-        public IActionResult DeletarAdm(int id)
+        [HttpGet("doacoes")]
+        public async Task<IActionResult> ListarDoacoes()
         {
-            var adm = _context.Adms.FirstOrDefault(a => a.Id == id);
+            var doacoes = await _admService.ListarDoacoes();
+            return Ok(doacoes);
+        }
 
-            if (adm == null)
-                return NotFound(new { mensagem = "Administrador não encontrado." });
+        [HttpPost("galeria")]
+        public async Task<IActionResult> AdicionarFotoGaleria(IFormFile foto)
+        {
+            var fotoId = await _admService.AdicionarFotoGaleria(foto);
+            return Ok(new { id = fotoId });
+        }
 
-            _context.Adms.Remove(adm);
-            _context.SaveChanges();
+        [HttpDelete("galeria/{fotoId}")]
+        public async Task<IActionResult> RemoverFotoGaleria(string fotoId)
+        {
+            var result = await _admService.RemoverFotoGaleria(fotoId);
+            if (!result) return NotFound();
+            return NoContent();
+        }
 
-            return Ok(new { mensagem = "Administrador removido com sucesso!" });
+        [HttpPost("publicacoes")]
+        public async Task<IActionResult> PublicarTexto([FromBody] string texto)
+        {
+            var result = await _admService.PublicarTexto(texto);
+            return Ok(new { message = result });
         }
     }
 }
