@@ -1,36 +1,44 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+using Back_End.Enums;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
 using System.Text;
-using Back_End.Interfaces;
+using BCrypt.Net;
 
 namespace Back_End.Models
 {
-    [Table("Adms")]
-    public class Adm : Usuario, IAutenticacao
+    public class Adm : Usuario
     {
-        [Required, MaxLength(20)]
-        public string Login { get; set; } = string.Empty;
+        [Required, StringLength(50)]
+        public string Login { get; set; } = null!;
 
         [Required]
-        public string Senha { get; private set; } = string.Empty;
+        public string SenhaHash { get; set; } = null!;
 
-        public bool Autenticar(string senha)
-        {
-            return Senha == GerarHash(senha);
-        }
+        public TipoUsuario Tipo { get; set; } = TipoUsuario.Adm;
 
         public void DefinirSenha(string senha)
         {
-            Senha = GerarHash(senha);
+            SenhaHash = BCrypt.Net.BCrypt.HashPassword(senha);
         }
 
-        private static string GerarHash(string senha)
+        public bool Autenticar(string senha)
         {
-            using var sha256 = SHA256.Create();
-            var bytes = Encoding.UTF8.GetBytes(senha);
-            var hash = sha256.ComputeHash(bytes);
-            return Convert.ToBase64String(hash);
+            if (this.SenhaHash != null && this.SenhaHash.Length == 44 && this.SenhaHash.EndsWith("="))
+            {
+                using var sha256 = SHA256.Create();
+                var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(senha));
+                var hash = Convert.ToBase64String(bytes);
+
+                if (hash == this.SenhaHash)
+                {
+                    this.DefinirSenha(senha);
+                    return true;
+                }
+                return false;
+            }
+
+            return BCrypt.Net.BCrypt.Verify(senha, this.SenhaHash);
         }
+
     }
 }

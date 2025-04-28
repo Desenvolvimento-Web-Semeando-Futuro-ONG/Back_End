@@ -1,12 +1,8 @@
-ï»¿using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using Back_End.Models;
 using Back_End.Data;
+using Back_End.Services.Interfaces;
 using Back_End.ViewModels;
-
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace Back_End.Controllers
@@ -16,47 +12,32 @@ namespace Back_End.Controllers
     public class AuthController : ControllerBase
     {
         private readonly AppDbContext _context;
-        private readonly IConfiguration _config;
+        private readonly IAutenticacaoService _authService;
 
-        public AuthController(AppDbContext context, IConfiguration config)
+        public AuthController(AppDbContext context, IAutenticacaoService authService)
         {
             _context = context;
-            _config = config;
+            _authService = authService;
         }
 
         [HttpPost("login")]
-        public IActionResult Login([FromBody] LoginViewModel model)
+        public async Task<IActionResult> Login([FromBody] LoginViewModel loginVM)
         {
-            var adm = _context.Adms.FirstOrDefault(a => a.Login == model.Login);
+            if (loginVM == null)
+                return BadRequest("Dados inválidos");
 
-            if (adm == null || !adm.Autenticar(model.Senha))
-                return Unauthorized(new { mensagem = "Login ou senha invÃ¡lidos." });
+            var adm = await _context.Adms.FirstOrDefaultAsync(a => a.Login == loginVM.Login);
+            if (adm == null)
+                return Unauthorized("Usuário não encontrado");
 
-            var token = GerarToken(adm);
-
-            return Ok(new { token });
-        }
-
-        private string GerarToken(Adm adm)
-        {
-            var claims = new[]
+            if (adm.Autenticar(loginVM.Senha))
             {
-                new Claim(ClaimTypes.NameIdentifier, adm.Id.ToString()),
-                new Claim(ClaimTypes.Role, "Adm")
-            };
+                await _context.SaveChangesAsync();
+                var token = _authService.GerarTokenJwt(adm);
+                return Ok(new { token });
+            }
 
-            var chave = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
-            var credenciais = new SigningCredentials(chave, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
-                issuer: _config["Jwt:Issuer"],
-                audience: _config["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddHours(2),
-                signingCredentials: credenciais
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return Unauthorized("Credenciais inválidas");
         }
     }
 }

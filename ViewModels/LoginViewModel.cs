@@ -1,8 +1,14 @@
-ï»¿namespace Back_End.ViewModels
+using System.ComponentModel.DataAnnotations;
+
+namespace Back_End.ViewModels
 {
     public class LoginViewModel
     {
-        public required string Login { get; set; }
-        public required string Senha { get; set; }
+        [Required(ErrorMessage = "O login é obrigatório")]
+        public string Login { get; set; } = null!;
+
+        [Required(ErrorMessage = "A senha é obrigatória")]
+        public string Senha { get; set; } = null!;
     }
+
 }
