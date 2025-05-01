@@ -2,8 +2,8 @@ namespace Back_End.Config
 {
     public class MongoDBSettings
     {
-        public required string ConnectionString { get; set; }
-        public required string DatabaseName { get; set; }
-        public required string GaleriaCollectionName { get; set; }
+        public string ConnectionString { get; set; } = string.Empty;
+        public string DatabaseName { get; set; } = string.Empty;
+        public string CollectionName { get; set; } = string.Empty;
     }
 }
