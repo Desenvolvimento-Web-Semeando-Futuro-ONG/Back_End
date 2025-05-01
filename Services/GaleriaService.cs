@@ -1,6 +1,7 @@
 using Back_End.Config;
 using MongoDB.Driver;
 using MongoDB.Bson;
+using Microsoft.Extensions.Options; 
 
 namespace Back_End.Services
 {
@@ -8,11 +9,12 @@ namespace Back_End.Services
     {
         private readonly IMongoCollection<ImagemModel> _imagensCollection;
 
-        public GaleriaService(MongoDBSettings settings)
+        public GaleriaService(IOptions<MongoDBSettings> settings)
         {
-            var client = new MongoClient(settings.ConnectionString);
-            var database = client.GetDatabase(settings.DatabaseName);
-            _imagensCollection = database.GetCollection<ImagemModel>("Imagens");
+            var mongoSettings = settings.Value; 
+            var client = new MongoClient(mongoSettings.ConnectionString);
+            var database = client.GetDatabase(mongoSettings.DatabaseName);
+            _imagensCollection = database.GetCollection<ImagemModel>(mongoSettings.CollectionName);
         }
 
         public async Task<string> UploadImagem(IFormFile imagem)
