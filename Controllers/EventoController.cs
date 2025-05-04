@@ -65,16 +65,22 @@ namespace Back_End.Controllers
             return NoContent();
         }
 
-        [HttpGet("{id}/imagem")]
-        public async Task<IActionResult> ObterImagem(int id)
+        [HttpGet("imagem/{id}")]
+        public async Task<IActionResult> ObterImagemEvento(string id)
         {
-            var evento = await _eventoService.ObterPorId(id);
-            if (evento?.ImagemUrl == null) return NotFound();
+            try
+            {
+                var imagem = await _galeriaService.ObterImagem(id);
 
-            var imagem = await _galeriaService.ObterImagem(evento.ImagemUrl);
-            if (imagem == null) return NotFound();
+                if (imagem == null)
+                    return NotFound("Imagem não encontrada");
 
-            return File(imagem.Dados, imagem.ContentType);
+                return File(imagem.Dados, imagem.ContentType);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Erro interno ao recuperar a imagem: {ex.Message}");
+            }
         }
     }
 }

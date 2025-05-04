@@ -1,7 +1,7 @@
 using Back_End.Config;
 using MongoDB.Driver;
 using MongoDB.Bson;
-using Microsoft.Extensions.Options; 
+using Microsoft.Extensions.Options;
 
 namespace Back_End.Services
 {
@@ -11,7 +11,7 @@ namespace Back_End.Services
 
         public GaleriaService(IOptions<MongoDBSettings> settings)
         {
-            var mongoSettings = settings.Value; 
+            var mongoSettings = settings.Value;
             var client = new MongoClient(mongoSettings.ConnectionString);
             var database = client.GetDatabase(mongoSettings.DatabaseName);
             _imagensCollection = database.GetCollection<ImagemModel>(mongoSettings.CollectionName);
@@ -37,12 +37,18 @@ namespace Back_End.Services
 
         public async Task<ImagemModel?> ObterImagem(string id)
         {
-            return await _imagensCollection.Find(i => i.Id == ObjectId.Parse(id)).FirstOrDefaultAsync();
+            if (!ObjectId.TryParse(id, out var objectId))
+                return null;
+
+            return await _imagensCollection.Find(i => i.Id == objectId).FirstOrDefaultAsync();
         }
 
         public async Task<bool> DeletarImagem(string id)
         {
-            var result = await _imagensCollection.DeleteOneAsync(i => i.Id == ObjectId.Parse(id));
+            if (!ObjectId.TryParse(id, out var objectId))
+                return false;
+
+            var result = await _imagensCollection.DeleteOneAsync(i => i.Id == objectId);
             return result.DeletedCount > 0;
         }
     }

@@ -5,9 +5,6 @@ namespace Back_End.Data
 {
     public class AppDbContext : DbContext
     {
-        // Construtor padrão necessário para migrações
-        public AppDbContext() { }
-
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         public DbSet<Adm> Adms { get; set; }
@@ -34,18 +31,7 @@ namespace Back_End.Data
                 .WithMany(v => v.Eventos)
                 .HasForeignKey(ev => ev.VoluntarioId);
 
-            // Configurações adicionais de modelos...
-
             base.OnModelCreating(modelBuilder);
-        }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            if (!optionsBuilder.IsConfigured)
-            {
-                // Configuração usada apenas para migrações
-                optionsBuilder.UseNpgsql("Host=dpg-cvunjkvdiees73e86n4g-a.oregon-postgres.render.com;Port=5432;Database=postgres_semear;Username=postgres_semear_user;Password=JxMLP4NlOWLcmej8QUN51C3Kz36FCGjP;SSL Mode=Require;Trust Server Certificate=true;Pooling=true;");
-            }
         }
     }
 }
