@@ -17,28 +17,6 @@ namespace Back_End.Controllers
             _admService = admService;
         }
 
-        [AllowAnonymous]
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginViewModel loginVM)
-        {
-            try
-            {
-                var token = await _admService.Login(loginVM);
-                return Ok(new { token });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
-
-        [HttpPost("eventos")]
-        public async Task<IActionResult> CriarEvento([FromForm] EventoViewModel model)
-        {
-            var admId = int.Parse(User.FindFirst("id")?.Value!);
-            var eventoId = await _admService.CriarEvento(model, admId);
-            return CreatedAtAction(nameof(EventoController.ObterPorId), "Evento", new { id = eventoId }, new { id = eventoId });
-        }
 
         [HttpPut("eventos/{eventoId}/voluntarios")]
         public async Task<IActionResult> EscalarVoluntarios(int eventoId, [FromBody] List<int> voluntariosIds)
@@ -62,13 +40,13 @@ namespace Back_End.Controllers
             return Ok(new { id = fotoId });
         }
 
-        [HttpDelete("galeria/{fotoId}")]
-        public async Task<IActionResult> RemoverFotoGaleria(string fotoId)
-        {
-            var result = await _admService.RemoverFotoGaleria(fotoId);
-            if (!result) return NotFound();
-            return NoContent();
-        }
+        //[HttpDelete("galeria/{fotoId}")]
+        //public async Task<IActionResult> RemoverFotoGaleria(string fotoId)
+        //{
+        //   var result = await _admService.RemoverFotoGaleria(fotoId);
+        //   if (!result) return NotFound();
+        //   return NoContent();
+        //}
 
         [HttpPost("publicacoes")]
         public async Task<IActionResult> PublicarTexto([FromBody] string texto)

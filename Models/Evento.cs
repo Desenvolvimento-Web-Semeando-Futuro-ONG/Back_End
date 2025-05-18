@@ -10,7 +10,7 @@ namespace Back_End.Models
         [Required, StringLength(100)]
         public string Nome { get; set; } = null!;
 
-        [Required, StringLength(1000)]
+        [Required, StringLength(100000)]
         public string Descricao { get; set; } = null!;
 
         [Required]

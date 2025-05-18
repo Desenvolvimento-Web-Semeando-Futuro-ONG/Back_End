@@ -12,5 +12,6 @@ namespace Back_End.Models
         public string Disponibilidade { get; set; } = null!;
 
         public List<EventoVoluntario> Eventos { get; set; } = new();
+        public List<ProjetoVoluntario> Projetos { get; set; } = new();
     }
 }

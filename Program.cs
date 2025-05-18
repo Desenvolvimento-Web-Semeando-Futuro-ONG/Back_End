@@ -56,6 +56,9 @@ builder.Services.AddScoped<IAutenticacaoService, AutenticacaoService>();
 builder.Services.AddScoped<IEventoService, EventoService>();
 builder.Services.AddScoped<IVoluntarioService, VoluntarioService>();
 builder.Services.AddScoped<IDoadorService, DoadorService>();
+builder.Services.AddScoped<IProjetoService, ProjetoService>();
+
+builder.Services.AddScoped<Back_End.Services.Interfaces.IProjetoService, Back_End.Services.ProjetoService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
