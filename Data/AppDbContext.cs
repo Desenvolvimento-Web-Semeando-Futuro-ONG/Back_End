@@ -15,9 +15,12 @@ namespace Back_End.Data
         public DbSet<Doacao> Doacoes { get; set; }
         public DbSet<Publicacao> Publicacoes { get; set; }
         public DbSet<IntegracaoWhatsApp> IntegracoesWhatsApp { get; set; }
+        public DbSet<Projeto> Projetos { get; set; }
+        public DbSet<ProjetoVoluntario> ProjetoVoluntarios { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
             modelBuilder.Entity<EventoVoluntario>()
                 .HasKey(ev => new { ev.EventoId, ev.VoluntarioId });
 
@@ -30,6 +33,29 @@ namespace Back_End.Data
                 .HasOne(ev => ev.Voluntario)
                 .WithMany(v => v.Eventos)
                 .HasForeignKey(ev => ev.VoluntarioId);
+
+            modelBuilder.Entity<ProjetoVoluntario>()
+                .HasKey(pv => new { pv.ProjetoId, pv.VoluntarioId });
+
+            modelBuilder.Entity<ProjetoVoluntario>()
+                .HasOne(pv => pv.Projeto)
+                .WithMany(p => p.Voluntarios)
+                .HasForeignKey(pv => pv.ProjetoId);
+
+            modelBuilder.Entity<ProjetoVoluntario>()
+                .HasOne(pv => pv.Voluntario)
+                .WithMany(v => v.Projetos)
+                .HasForeignKey(pv => pv.VoluntarioId);
+
+            foreach (var property in modelBuilder.Model.GetEntityTypes()
+                .SelectMany(t => t.GetProperties())
+                .Where(p => p.ClrType == typeof(string)))
+            {
+                if (property.GetMaxLength() == null)
+                {
+                    property.SetMaxLength(256); 
+                }
+            }
 
             base.OnModelCreating(modelBuilder);
         }
