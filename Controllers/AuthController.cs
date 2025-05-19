@@ -33,7 +33,7 @@ namespace Back_End.Controllers
             if (adm.Autenticar(loginVM.Senha))
             {
                 await _context.SaveChangesAsync();
-                var token = _authService.GerarTokenJwt(adm);
+                var token = _authService.GerarTokenAdm(adm);
                 return Ok(new { token });
             }
 

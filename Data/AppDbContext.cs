@@ -1,5 +1,8 @@
 ﻿using Back_End.Models;
+using Back_End.Enums;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System;
 
 namespace Back_End.Data
 {
@@ -20,44 +23,57 @@ namespace Back_End.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<EventoVoluntario>()
-                .HasKey(ev => new { ev.EventoId, ev.VoluntarioId });
+            // Relação Projeto -> CriadoPorAdm
+            modelBuilder.Entity<Projeto>()
+                .HasOne(p => p.CriadoPorAdm)
+                .WithMany()
+                .HasForeignKey(p => p.CriadoPorAdmId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<EventoVoluntario>()
-                .HasOne(ev => ev.Evento)
-                .WithMany(e => e.Voluntarios)
-                .HasForeignKey(ev => ev.EventoId);
-
-            modelBuilder.Entity<EventoVoluntario>()
-                .HasOne(ev => ev.Voluntario)
-                .WithMany(v => v.Eventos)
-                .HasForeignKey(ev => ev.VoluntarioId);
-
+            // Relação muitos-para-muitos: Projeto <-> Voluntario
             modelBuilder.Entity<ProjetoVoluntario>()
                 .HasKey(pv => new { pv.ProjetoId, pv.VoluntarioId });
 
             modelBuilder.Entity<ProjetoVoluntario>()
                 .HasOne(pv => pv.Projeto)
                 .WithMany(p => p.Voluntarios)
-                .HasForeignKey(pv => pv.ProjetoId);
+                .HasForeignKey(pv => pv.ProjetoId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<ProjetoVoluntario>()
                 .HasOne(pv => pv.Voluntario)
                 .WithMany(v => v.Projetos)
-                .HasForeignKey(pv => pv.VoluntarioId);
+                .HasForeignKey(pv => pv.VoluntarioId)
+                .OnDelete(DeleteBehavior.Cascade);
 
+            // Relação muitos-para-muitos: Evento <-> Voluntario
+            modelBuilder.Entity<EventoVoluntario>()
+                .HasKey(ev => new { ev.EventoId, ev.VoluntarioId });
+
+            modelBuilder.Entity<EventoVoluntario>()
+                .HasOne(ev => ev.Evento)
+                .WithMany(e => e.Voluntarios)
+                .HasForeignKey(ev => ev.EventoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<EventoVoluntario>()
+                .HasOne(ev => ev.Voluntario)
+                .WithMany(v => v.Eventos)
+                .HasForeignKey(ev => ev.VoluntarioId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Definir comprimento máximo padrão para propriedades string
             foreach (var property in modelBuilder.Model.GetEntityTypes()
                 .SelectMany(t => t.GetProperties())
                 .Where(p => p.ClrType == typeof(string)))
             {
                 if (property.GetMaxLength() == null)
                 {
-                    property.SetMaxLength(256); 
+                    property.SetMaxLength(256);
                 }
             }
-
-            base.OnModelCreating(modelBuilder);
         }
     }
 }

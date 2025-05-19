@@ -5,7 +5,8 @@ namespace Back_End.Services.Interfaces
 {
     public interface IAutenticacaoService
     {
-        //Task<string?> Login(LoginViewModel loginVM);
-        string GerarTokenJwt(Adm adm);
+        Task<string?> LoginAdm(LoginViewModel loginVM);
+        string GerarTokenAdm(Adm adm);
+        string GerarTokenVoluntario(Voluntario voluntario);
     }
 }

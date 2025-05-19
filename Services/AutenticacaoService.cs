@@ -17,28 +17,74 @@ namespace Back_End.Services
 
         public AutenticacaoService(AppDbContext context, IConfiguration configuration)
         {
-            _context = context;
-            _configuration = configuration;
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
-        public async Task<string?> Login(LoginViewModel loginVM)
+        public async Task<string?> LoginAdm(LoginViewModel loginVM)
         {
-            var adm = await _context.Adms.FirstOrDefaultAsync(a => a.Login == loginVM.Login);
-            if (adm == null || !adm.Autenticar(loginVM.Senha)) return null;
+            if (loginVM == null || string.IsNullOrWhiteSpace(loginVM.Login))
+            {
+                return null;
+            }
 
-            return GerarTokenJwt(adm);
+            var adm = await _context.Adms
+                .FirstOrDefaultAsync(a => a.Login == loginVM.Login);
+
+            if (adm == null || !adm.Autenticar(loginVM.Senha))
+            {
+                return null;
+            }
+
+            return GerarTokenAdm(adm);
         }
 
-        public string GerarTokenJwt(Adm adm)
+        public string GerarTokenVoluntario(Voluntario voluntario)
         {
+            if (voluntario == null)
+            {
+                throw new ArgumentNullException(nameof(voluntario));
+            }
+
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]!);
+            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"] ?? throw new InvalidOperationException("Chave JWT não configurada"));
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new[]
                 {
-                    new Claim(ClaimTypes.Name, adm.Nome),
+                    new Claim(ClaimTypes.Name, voluntario.Nome ?? string.Empty),
+                    new Claim(ClaimTypes.Role, "Voluntario"),
+                    new Claim("id", voluntario.Id.ToString()),
+                    new Claim("cpf", voluntario.CPF ?? string.Empty)
+                }),
+                Expires = DateTime.UtcNow.AddDays(30),
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(key),
+                    SecurityAlgorithms.HmacSha256Signature),
+                Issuer = _configuration["Jwt:Issuer"],
+                Audience = _configuration["Jwt:Audience"]
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
+
+        public string GerarTokenAdm(Adm adm)
+        {
+            if (adm == null)
+            {
+                throw new ArgumentNullException(nameof(adm));
+            }
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"] ?? throw new InvalidOperationException("Chave JWT não configurada"));
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.Name, adm.Nome ?? string.Empty),
                     new Claim(ClaimTypes.Role, "Adm"),
                     new Claim("id", adm.Id.ToString())
                 }),

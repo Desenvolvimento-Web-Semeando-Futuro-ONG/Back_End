@@ -2,17 +2,18 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Back_End.Models;
 using Back_End.ViewModels;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Back_End.Services.Interfaces
 {
     public interface IProjetoService
     {
-        // Métodos públicos (todos podem ver)
+        // Métodos públicos
         Task<List<Projeto>> ListarProjetosAtivos();
         Task<List<Projeto>> ListarProjetosPorTipo(string tipo);
         Task<Projeto?> ObterProjetoPorId(int id);
 
-        // Métodos apenas para ADMs
+        // Métodos para ADMs
         Task<List<Projeto>> ListarTodosProjetosAdmin(int admId);
         Task<Projeto> CriarProjetoAdmin(ProjetoViewModel model, int admId);
         Task<Projeto?> AtualizarProjetoAdmin(int id, ProjetoViewModel model, int admId);
@@ -21,6 +22,7 @@ namespace Back_End.Services.Interfaces
         // Métodos para voluntários
         Task<bool> InscreverVoluntario(int projetoId, int voluntarioId);
         Task<bool> CancelarInscricao(int projetoId, int voluntarioId);
+        Task<IActionResult> CadastrarVoluntarioComInscricao([FromBody] CadastroComInscricaoViewModel model);
 
         // Métodos para ADMs gerenciarem voluntários
         Task<bool> AprovarVoluntario(int projetoId, int voluntarioId, int admId);
