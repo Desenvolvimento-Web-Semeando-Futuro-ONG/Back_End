@@ -10,6 +10,7 @@ namespace Back_End.Models
 
         public DateTime DataInscricao { get; set; } = DateTime.Now;
         public StatusInscricao Status { get; set; } = StatusInscricao.Pendente;
+        public string? FuncaoDesejada { get; set; }
     }
 }
 

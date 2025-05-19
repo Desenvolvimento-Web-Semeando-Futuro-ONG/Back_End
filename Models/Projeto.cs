@@ -23,8 +23,9 @@ namespace Back_End.Models
         public bool EhEventoEspecifico { get; set; } = false;
         public string? TipoEventoEspecifico { get; set; }
 
-        public int CriadoPorAdmId { get; set; }
-        public Adm? CriadoPorAdm { get; set; }
+        public int CriadoPorAdmId { get; set; } 
+
+        public Adm CriadoPorAdm { get; set; } = null!;
 
         public List<ProjetoVoluntario> Voluntarios { get; set; } = new();
     }

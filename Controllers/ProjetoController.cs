@@ -39,6 +39,18 @@ namespace Back_End.Controllers
             return Ok(projeto);
         }
 
+        [HttpPost("inscrever")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public async Task<IActionResult> Inscrever([FromBody] CadastroComInscricaoViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            return await _projetoService.CadastrarVoluntarioComInscricao(model);
+        }
+
         // Apenas ADMs
         [Authorize(Roles = "Adm")]
         [HttpGet("admin")]
@@ -78,17 +90,6 @@ namespace Back_End.Controllers
             return NoContent();
         }
 
-        // Voluntários
-        [Authorize(Roles = "Voluntario")]
-        [HttpPost("{projetoId}/inscrever")]
-        public async Task<IActionResult> Inscrever(int projetoId)
-        {
-            var voluntarioId = int.Parse(User.FindFirst("id")?.Value!);
-            var resultado = await _projetoService.InscreverVoluntario(projetoId, voluntarioId);
-            if (!resultado) return BadRequest();
-            return Ok();
-        }
-
         [Authorize(Roles = "Voluntario")]
         [HttpDelete("{projetoId}/cancelar")]
         public async Task<IActionResult> CancelarInscricao(int projetoId)
@@ -96,7 +97,7 @@ namespace Back_End.Controllers
             var voluntarioId = int.Parse(User.FindFirst("id")?.Value!);
             var resultado = await _projetoService.CancelarInscricao(projetoId, voluntarioId);
             if (!resultado) return BadRequest();
-            return Ok();
+            return Ok(new { sucesso = true, mensagem = "Inscrição cancelada com sucesso" });
         }
 
         // ADMs gerenciando voluntários
@@ -107,7 +108,7 @@ namespace Back_End.Controllers
             var admId = int.Parse(User.FindFirst("id")?.Value!);
             var resultado = await _projetoService.AprovarVoluntario(projetoId, voluntarioId, admId);
             if (!resultado) return BadRequest();
-            return Ok();
+            return Ok(new { sucesso = true, mensagem = "Voluntário aprovado com sucesso" });
         }
 
         [Authorize(Roles = "Adm")]
@@ -117,7 +118,7 @@ namespace Back_End.Controllers
             var admId = int.Parse(User.FindFirst("id")?.Value!);
             var resultado = await _projetoService.RejeitarVoluntario(projetoId, voluntarioId, admId);
             if (!resultado) return BadRequest();
-            return Ok();
+            return Ok(new { sucesso = true, mensagem = "Voluntário rejeitado com sucesso" });
         }
 
         [Authorize(Roles = "Adm")]
