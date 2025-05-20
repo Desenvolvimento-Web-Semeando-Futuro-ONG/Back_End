@@ -11,5 +11,9 @@ namespace Back_End.Services.Interfaces
         Task<string> AdicionarFotoGaleria(IFormFile foto);
         Task<bool> RemoverFotoGaleria(string fotoId);
         Task<string> PublicarTexto(string texto);
+        Task<int> CriarAdm(AdmViewModel admVM);
+        Task<List<AdmRespostaViewModel>> ListarAdms();
+        Task<AdmRespostaViewModel> ObterPerfilAdm(int id);
+        Task<bool> EditarAdm(int id, EditarAdmViewModel admVM);
     }
 }

@@ -2,8 +2,8 @@ using Back_End.Data;
 using Back_End.Models;
 using Back_End.ViewModels;
 using Microsoft.EntityFrameworkCore;
-using Back_End.Services.Interfaces;
-
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Back_End.Services
 {
@@ -21,6 +21,26 @@ namespace Back_End.Services
         public async Task<List<Evento>> ListarTodos()
         {
             return await _context.Eventos
+                .Include(e => e.Voluntarios)
+                .ThenInclude(ev => ev.Voluntario)
+                .Include(e => e.CriadoPorAdm)
+                .ToListAsync();
+        }
+
+        public async Task<List<Evento>> ListarRascunhos(int admId)
+        {
+            return await _context.Eventos
+                .Where(e => e.EhRascunho && e.CriadoPorAdmId == admId)
+                .Include(e => e.Voluntarios)
+                .ThenInclude(ev => ev.Voluntario)
+                .Include(e => e.CriadoPorAdm)
+                .ToListAsync();
+        }
+
+        public async Task<List<Evento>> ListarPublicados()
+        {
+            return await _context.Eventos
+                .Where(e => !e.EhRascunho)
                 .Include(e => e.Voluntarios)
                 .ThenInclude(ev => ev.Voluntario)
                 .Include(e => e.CriadoPorAdm)
@@ -51,7 +71,8 @@ namespace Back_End.Services
                 Descricao = model.Descricao,
                 DataEvento = model.DataEvento,
                 ImagemUrl = imagemUrl,
-                CriadoPorAdmId = admId
+                CriadoPorAdmId = admId,
+                EhRascunho = model.SalvarComoRascunho,
             };
 
             _context.Eventos.Add(evento);
@@ -81,6 +102,17 @@ namespace Back_End.Services
 
             await _context.SaveChangesAsync();
             return evento;
+        }
+
+        public async Task<bool> PublicarRascunho(int id)
+        {
+            var evento = await _context.Eventos.FindAsync(id);
+            if (evento == null || !evento.EhRascunho) return false;
+
+            evento.EhRascunho = false;
+
+            await _context.SaveChangesAsync();
+            return true;
         }
 
         public async Task<bool> Deletar(int id)

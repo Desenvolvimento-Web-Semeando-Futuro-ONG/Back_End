@@ -8,6 +8,7 @@ using Back_End.Services.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Back_End.Enums;
 using Microsoft.AspNetCore.Http; 
 using Microsoft.Extensions.Configuration;
 
@@ -142,6 +143,99 @@ namespace Back_End.Services
             _context.Publicacoes.Add(publicacao);
             await _context.SaveChangesAsync();
             return "Texto publicado com sucesso";
+        }
+
+        public async Task<int> CriarAdm(AdmViewModel admVM)
+        {
+            try
+            {
+                if (await _context.Adms.AnyAsync(a => a.Login == admVM.Login))
+                    throw new ArgumentException("Login já está em uso");
+
+                if (await _context.Adms.AnyAsync(a => a.CPF == admVM.CPF))
+                    throw new ArgumentException("CPF já cadastrado");
+
+                if (await _context.Adms.AnyAsync(a => a.Email == admVM.Email))
+                    throw new ArgumentException("Email já cadastrado");
+
+                var adm = new Adm
+                {
+                    Nome = admVM.Nome,
+                    Telefone = admVM.Telefone,
+                    CPF = admVM.CPF,
+                    Email = admVM.Email,
+                    Login = admVM.Login,
+                    Tipo = TipoUsuario.Adm
+                };
+
+                adm.DefinirSenha(admVM.Senha);
+
+                _context.Adms.Add(adm);
+                await _context.SaveChangesAsync();
+
+                return adm.Id;
+            }
+            catch (DbUpdateException ex)
+            {
+                Console.WriteLine($"Erro ao criar administrador: {ex.InnerException?.Message}");
+                throw new Exception("Erro ao salvar no banco de dados");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao criar administrador: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task<List<AdmRespostaViewModel>> ListarAdms()
+        {
+            return await _context.Adms
+                .Select(a => new AdmRespostaViewModel
+                {
+                    Id = a.Id,
+                    Nome = a.Nome,
+                    Login = a.Login
+                })
+                .ToListAsync();
+        }
+
+        public async Task<bool> EditarAdm(int id, EditarAdmViewModel admVM)
+        {
+            var adm = await _context.Adms.FindAsync(id);
+            if (adm == null) return false;
+
+            if (!string.IsNullOrEmpty(admVM.Nome))
+                adm.Nome = admVM.Nome;
+
+            if (!string.IsNullOrEmpty(admVM.Login))
+            {
+                if (await _context.Adms.AnyAsync(a => a.Login == admVM.Login && a.Id != id))
+                    throw new ArgumentException("Login já está em uso");
+
+                adm.Login = admVM.Login;
+            }
+
+            if (!string.IsNullOrEmpty(admVM.Senha))
+                adm.DefinirSenha(admVM.Senha);
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<AdmRespostaViewModel> ObterPerfilAdm(int id)
+        {
+            var adm = await _context.Adms.FindAsync(id);
+            if (adm == null) return null;
+
+            return new AdmRespostaViewModel
+            {
+                Id = adm.Id,
+                Nome = adm.Nome,
+                Telefone = adm.Telefone, 
+                CPF = adm.CPF, 
+                Email = adm.Email, 
+                Login = adm.Login
+            };
         }
 
         private string GerarTokenJwt(Adm adm)

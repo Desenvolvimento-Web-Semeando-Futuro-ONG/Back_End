@@ -22,6 +22,22 @@ namespace Back_End.Services
                 .FirstOrDefaultAsync(d => d.CPF == cpf);
         }
 
+        public async Task<List<DoacaoViewModel>> ListarDoacoes()
+        {
+            return await _context.Doacoes
+                .Include(d => d.Doador)
+                .Where(d => d.Doador != null)
+                .Select(d => new DoacaoViewModel
+                {
+                    Id = d.Id,
+                    DoadorNome = d.Doador!.Nome,
+                    Valor = d.Valor,
+                    DataDoacao = d.DataDoacao,
+                    MetodoPagamento = d.MetodoPagamento
+                })
+                .ToListAsync();
+        }
+
         public async Task<Doador> Cadastrar(DoadorViewModel model)
         {
             var doador = new Doador

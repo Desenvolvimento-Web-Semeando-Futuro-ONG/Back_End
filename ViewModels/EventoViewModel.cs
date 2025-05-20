@@ -15,5 +15,7 @@ namespace Back_End.ViewModels
         public DateTime DataEvento { get; set; }
 
         public IFormFile? Imagem { get; set; }
+
+        public bool SalvarComoRascunho { get; set; } = true;
     }
 }

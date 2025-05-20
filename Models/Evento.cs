@@ -21,6 +21,8 @@ namespace Back_End.Models
         public int CriadoPorAdmId { get; set; }
         public Adm? CriadoPorAdm { get; set; }
 
+        public bool EhRascunho { get; set; } = true;
+
         public List<EventoVoluntario> Voluntarios { get; set; } = new();
     }
 }
