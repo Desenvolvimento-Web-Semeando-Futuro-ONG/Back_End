@@ -9,10 +9,19 @@ namespace Back_End.Controllers
     public class DoadorController : ControllerBase
     {
         private readonly IDoadorService _doadorService;
+        private readonly IAdmService _admService;
 
-        public DoadorController(IDoadorService doadorService)
+        public DoadorController(IDoadorService doadorService, IAdmService admService)
         {
             _doadorService = doadorService;
+            _admService = admService;
+        }
+
+        [HttpGet("doacoes")]
+        public async Task<IActionResult> ListarDoacoes()
+        {
+            var doacoes = await _admService.ListarDoacoes();
+            return Ok(doacoes);
         }
 
         [HttpPost]

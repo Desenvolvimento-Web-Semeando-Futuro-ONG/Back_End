@@ -3,6 +3,7 @@ using System;
 using Back_End.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Back_End.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250519233726_Fixcriaradm")]
+    partial class Fixcriaradm
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -158,9 +161,6 @@ namespace Back_End.Migrations
                         .IsRequired()
                         .HasMaxLength(100000)
                         .HasColumnType("character varying(100000)");
-
-                    b.Property<bool>("EhRascunho")
-                        .HasColumnType("boolean");
 
                     b.Property<string>("ImagemUrl")
                         .HasMaxLength(256)

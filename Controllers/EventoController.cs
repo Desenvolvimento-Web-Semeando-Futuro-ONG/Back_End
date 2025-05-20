@@ -3,6 +3,7 @@ using Back_End.Services.Interfaces;
 using Back_End.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace Back_End.Controllers
 {
@@ -19,10 +20,27 @@ namespace Back_End.Controllers
             _galeriaService = galeriaService;
         }
 
+        [Authorize(Roles = "Adm")]
         [HttpGet]
         public async Task<IActionResult> ListarTodos()
         {
             var eventos = await _eventoService.ListarTodos();
+            return Ok(eventos);
+        }
+
+        [Authorize(Roles = "Adm")]
+        [HttpGet("rascunhos")]
+        public async Task<IActionResult> ListarRascunhos()
+        {
+            var admId = int.Parse(User.FindFirst("id")?.Value!);
+            var rascunhos = await _eventoService.ListarRascunhos(admId);
+            return Ok(rascunhos);
+        }
+
+        [HttpGet("publicados")]
+        public async Task<IActionResult> ListarPublicados()
+        {
+            var eventos = await _eventoService.ListarPublicados();
             return Ok(eventos);
         }
 
@@ -54,6 +72,15 @@ namespace Back_End.Controllers
             var evento = await _eventoService.Atualizar(id, model, _galeriaService);
             if (evento == null) return NotFound();
             return Ok(evento);
+        }
+
+        [Authorize(Roles = "Adm")]
+        [HttpPost("publicar/{id}")]
+        public async Task<IActionResult> PublicarRascunho(int id)
+        {
+            var resultado = await _eventoService.PublicarRascunho(id);
+            if (!resultado) return NotFound();
+            return NoContent();
         }
 
         [Authorize(Roles = "Adm")]
