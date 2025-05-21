@@ -1,5 +1,7 @@
-using Back_End.Enums;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
+using System.Collections.Generic;
+using Back_End.Enums;
 
 namespace Back_End.Models
 {
@@ -23,10 +25,12 @@ namespace Back_End.Models
         public bool EhEventoEspecifico { get; set; } = false;
         public string? TipoEventoEspecifico { get; set; }
 
-        public int CriadoPorAdmId { get; set; } 
+        public int CriadoPorAdmId { get; set; }
 
-        public Adm CriadoPorAdm { get; set; } = null!;
+        [JsonIgnore]
+        public virtual Adm CriadoPorAdm { get; set; } = null!;
 
-        public List<ProjetoVoluntario> Voluntarios { get; set; } = new();
+        [JsonIgnore]
+        public virtual ICollection<ProjetoVoluntario> Voluntarios { get; set; } = new List<ProjetoVoluntario>();
     }
 }

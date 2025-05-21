@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Back_End.Services.Interfaces;
 using Back_End.ViewModels;
+using Back_End.Models;
 
 namespace Back_End.Controllers
 {
@@ -16,19 +17,36 @@ namespace Back_End.Controllers
             _projetoService = projetoService;
         }
 
-        // Público
         [HttpGet("ativos")]
         public async Task<IActionResult> ListarAtivos()
         {
             var projetos = await _projetoService.ListarProjetosAtivos();
-            return Ok(projetos);
+            return Ok(projetos.Select(p => new
+            {
+                p.Id,
+                p.Nome,
+                p.Descricao,
+                p.DataInicio,
+                p.DataFim,
+                p.Status,
+                p.EhEventoEspecifico,
+                p.TipoEventoEspecifico,
+                VoluntariosCount = p.Voluntarios.Count
+            }));
         }
 
         [HttpGet("tipo/{tipo}")]
         public async Task<IActionResult> ListarPorTipo(string tipo)
         {
             var projetos = await _projetoService.ListarProjetosPorTipo(tipo);
-            return Ok(projetos);
+            return Ok(projetos.Select(p => new
+            {
+                p.Id,
+                p.Nome,
+                p.Descricao,
+                p.DataInicio,
+                p.Status
+            }));
         }
 
         [HttpGet("{id}")]
@@ -36,7 +54,24 @@ namespace Back_End.Controllers
         {
             var projeto = await _projetoService.ObterProjetoPorId(id);
             if (projeto == null) return NotFound();
-            return Ok(projeto);
+
+            return Ok(new
+            {
+                projeto.Id,
+                projeto.Nome,
+                projeto.Descricao,
+                projeto.DataInicio,
+                projeto.DataFim,
+                projeto.Status,
+                projeto.EhEventoEspecifico,
+                projeto.TipoEventoEspecifico,
+                Voluntarios = projeto.Voluntarios.Select(v => new
+                {
+                    v.VoluntarioId,
+                    v.Voluntario?.Nome,
+                    v.Status
+                })
+            });
         }
 
         [HttpPost("inscrever")]
@@ -88,6 +123,48 @@ namespace Back_End.Controllers
             var resultado = await _projetoService.DesativarProjetoAdmin(id, admId);
             if (!resultado) return NotFound();
             return NoContent();
+        }
+
+        [Authorize(Roles = "Adm")]
+        [HttpGet("desativados")]
+        public async Task<IActionResult> ListarProjetosDesativados()
+        {
+            var admId = int.Parse(User.FindFirst("id")?.Value!);
+            var projetos = await _projetoService.ListarProjetosDesativados(admId);
+
+            return Ok(projetos.Select(p => new
+            {
+                p.Id,
+                p.Nome,
+                p.Descricao,
+                p.DataInicio,
+                p.DataFim,
+                p.Status,
+                CriadoPor = p.CriadoPorAdm.Nome
+            }));
+        }
+
+        [Authorize(Roles = "Adm")]
+        [HttpPut("ativar/{id}")]
+        public async Task<IActionResult> AtivarProjeto(int id)
+        {
+            var admId = int.Parse(User.FindFirst("id")?.Value!);
+            var projeto = await _projetoService.AtivarProjeto(id, admId);
+
+            if (projeto == null)
+                return NotFound(new { sucesso = false, mensagem = "Projeto não encontrado ou você não tem permissão" });
+
+            return Ok(new
+            {
+                sucesso = true,
+                mensagem = "Projeto ativado com sucesso",
+                projeto = new
+                {
+                    projeto.Id,
+                    projeto.Nome,
+                    projeto.Status
+                }
+            });
         }
 
         [Authorize(Roles = "Voluntario")]
