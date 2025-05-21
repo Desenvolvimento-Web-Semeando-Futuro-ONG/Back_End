@@ -98,6 +98,7 @@ namespace Back_End.Services
             evento.Nome = model.Nome;
             evento.Descricao = model.Descricao;
             evento.DataEvento = model.DataEvento;
+            evento.EhRascunho = model.SalvarComoRascunho; 
             if (imagemUrl != null) evento.ImagemUrl = imagemUrl;
 
             await _context.SaveChangesAsync();
@@ -110,7 +111,6 @@ namespace Back_End.Services
             if (evento == null || !evento.EhRascunho) return false;
 
             evento.EhRascunho = false;
-
             await _context.SaveChangesAsync();
             return true;
         }
