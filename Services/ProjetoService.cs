@@ -135,6 +135,32 @@ namespace Back_End.Services
             return true;
         }
 
+        public async Task<Projeto?> AtivarProjeto(int id, int admId)
+        {
+            var (isAdmin, _) = await GetAdminId(admId);
+            if (!isAdmin) return null;
+
+            var projeto = await _context.Projetos
+                .FirstOrDefaultAsync(p => p.Id == id && p.CriadoPorAdmId == admId);
+
+            if (projeto == null) return null;
+
+            projeto.Status = StatusProjeto.Ativo;
+            await _context.SaveChangesAsync();
+            return projeto;
+        }
+
+        public async Task<List<Projeto>> ListarProjetosDesativados(int admId)
+        {
+            var (isAdmin, _) = await GetAdminId(admId);
+            if (!isAdmin) return new List<Projeto>();
+
+            return await _context.Projetos
+                .Where(p => p.CriadoPorAdmId == admId && p.Status == StatusProjeto.Inativo)
+                .Include(p => p.CriadoPorAdm)
+                .ToListAsync();
+        }
+
         public async Task<bool> InscreverVoluntario(int projetoId, int usuarioId)
         {
             var (isVoluntario, voluntarioId) = await GetVoluntarioId(usuarioId);

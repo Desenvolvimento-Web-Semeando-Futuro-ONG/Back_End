@@ -10,12 +10,22 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Diagnostics;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-builder.Services.AddHttpContextAccessor();
+// Configuração do JSON Serializer para evitar referências circulares
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    });
 
+// Seus serviços originais
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendPolicy", policy =>
@@ -50,6 +60,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// Seus serviços registrados originalmente
 builder.Services.AddScoped<GaleriaService>();
 builder.Services.AddScoped<IAdmService, AdmService>();
 builder.Services.AddScoped<IAutenticacaoService, AutenticacaoService>();
@@ -58,8 +69,7 @@ builder.Services.AddScoped<IVoluntarioService, VoluntarioService>();
 builder.Services.AddScoped<IDoadorService, DoadorService>();
 builder.Services.AddScoped<IProjetoService, ProjetoService>();
 
-builder.Services.AddScoped<Back_End.Services.Interfaces.IProjetoService, Back_End.Services.ProjetoService>();
-
+// Configuração do Swagger original
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -91,6 +101,7 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// Seu pipeline HTTP original
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -107,6 +118,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
+// Sua inicialização de banco de dados original
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -129,6 +141,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// Seu código para abrir o Swagger automaticamente
 try
 {
     Process.Start(new ProcessStartInfo

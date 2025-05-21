@@ -18,6 +18,8 @@ namespace Back_End.Services.Interfaces
         Task<Projeto> CriarProjetoAdmin(ProjetoViewModel model, int admId);
         Task<Projeto?> AtualizarProjetoAdmin(int id, ProjetoViewModel model, int admId);
         Task<bool> DesativarProjetoAdmin(int id, int admId);
+        Task<Projeto?> AtivarProjeto(int id, int admId);
+        Task<List<Projeto>> ListarProjetosDesativados(int admId);
 
         // Métodos para voluntários
         Task<bool> InscreverVoluntario(int projetoId, int voluntarioId);

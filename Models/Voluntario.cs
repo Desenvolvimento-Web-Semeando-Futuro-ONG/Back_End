@@ -1,5 +1,5 @@
-using Back_End.Enums;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Back_End.Models
 {
@@ -11,7 +11,10 @@ namespace Back_End.Models
         [Required, StringLength(500)]
         public string Disponibilidade { get; set; } = null!;
 
+        [JsonIgnore]
         public List<EventoVoluntario> Eventos { get; set; } = new();
+
+        [JsonIgnore]
         public List<ProjetoVoluntario> Projetos { get; set; } = new();
     }
 }
