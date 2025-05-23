@@ -120,32 +120,26 @@ namespace Back_End.Services
             return projeto;
         }
 
-        public async Task<bool> DesativarProjetoAdmin(int id, int usuarioId)
-        {
-            var (isAdmin, adminId) = await GetAdminId(usuarioId);
-            if (!isAdmin) return false;
-
-            var projeto = await _context.Projetos
-                .FirstOrDefaultAsync(p => p.Id == id && p.CriadoPorAdmId == adminId);
-
-            if (projeto == null) return false;
-
-            projeto.Status = StatusProjeto.Inativo;
-            await _context.SaveChangesAsync();
-            return true;
-        }
-
         public async Task<Projeto?> AtivarProjeto(int id, int admId)
         {
-            var (isAdmin, _) = await GetAdminId(admId);
-            if (!isAdmin) return null;
-
             var projeto = await _context.Projetos
                 .FirstOrDefaultAsync(p => p.Id == id && p.CriadoPorAdmId == admId);
 
             if (projeto == null) return null;
 
             projeto.Status = StatusProjeto.Ativo;
+            await _context.SaveChangesAsync();
+            return projeto;
+        }
+
+        public async Task<Projeto?> DesativarProjeto(int id, int admId)
+        {
+            var projeto = await _context.Projetos
+                .FirstOrDefaultAsync(p => p.Id == id && p.CriadoPorAdmId == admId);
+
+            if (projeto == null) return null;
+
+            projeto.Status = StatusProjeto.Inativo;
             await _context.SaveChangesAsync();
             return projeto;
         }

@@ -116,16 +116,6 @@ namespace Back_End.Controllers
         }
 
         [Authorize(Roles = "Adm")]
-        [HttpPut("desativar/{id}")]
-        public async Task<IActionResult> Desativar(int id)
-        {
-            var admId = int.Parse(User.FindFirst("id")?.Value!);
-            var resultado = await _projetoService.DesativarProjetoAdmin(id, admId);
-            if (!resultado) return NotFound();
-            return NoContent();
-        }
-
-        [Authorize(Roles = "Adm")]
         [HttpGet("desativados")]
         public async Task<IActionResult> ListarProjetosDesativados()
         {
@@ -152,18 +142,31 @@ namespace Back_End.Controllers
             var projeto = await _projetoService.AtivarProjeto(id, admId);
 
             if (projeto == null)
-                return NotFound(new { sucesso = false, mensagem = "Projeto não encontrado ou você não tem permissão" });
+                return NotFound(new { sucesso = false, mensagem = "Projeto não encontrado" });
 
             return Ok(new
             {
                 sucesso = true,
                 mensagem = "Projeto ativado com sucesso",
-                projeto = new
-                {
-                    projeto.Id,
-                    projeto.Nome,
-                    projeto.Status
-                }
+                status = projeto.Status.ToString()
+            });
+        }
+
+        [Authorize(Roles = "Adm")]
+        [HttpPut("desativar/{id}")]
+        public async Task<IActionResult> DesativarProjeto(int id)
+        {
+            var admId = int.Parse(User.FindFirst("id")?.Value!);
+            var projeto = await _projetoService.DesativarProjeto(id, admId);
+
+            if (projeto == null)
+                return NotFound(new { sucesso = false, mensagem = "Projeto não encontrado" });
+
+            return Ok(new
+            {
+                sucesso = true,
+                mensagem = "Projeto desativado com sucesso",
+                status = projeto.Status.ToString()
             });
         }
 
