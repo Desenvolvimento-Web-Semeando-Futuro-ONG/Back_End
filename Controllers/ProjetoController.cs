@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Back_End.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Back_End.ViewModels;
 using Back_End.Models;
+using Back_End.Data;
 
 namespace Back_End.Controllers
 {
@@ -11,10 +13,12 @@ namespace Back_End.Controllers
     public class ProjetoController : ControllerBase
     {
         private readonly IProjetoService _projetoService;
+        private readonly AppDbContext _context; 
 
-        public ProjetoController(IProjetoService projetoService)
+        public ProjetoController(IProjetoService projetoService, AppDbContext context) 
         {
             _projetoService = projetoService;
+            _context = context;
         }
 
         [HttpGet("ativos")]
@@ -176,37 +180,114 @@ namespace Back_End.Controllers
         {
             var voluntarioId = int.Parse(User.FindFirst("id")?.Value!);
             var resultado = await _projetoService.CancelarInscricao(projetoId, voluntarioId);
-            if (!resultado) return BadRequest();
+
+            if (!resultado)
+                return BadRequest(new { sucesso = false, mensagem = "Falha ao cancelar inscrição" });
+
             return Ok(new { sucesso = true, mensagem = "Inscrição cancelada com sucesso" });
         }
 
-        // ADMs gerenciando voluntários
         [Authorize(Roles = "Adm")]
-        [HttpPut("{projetoId}/voluntarios/{voluntarioId}/aprovar")]
-        public async Task<IActionResult> AprovarVoluntario(int projetoId, int voluntarioId)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeletarProjeto(int id)
         {
             var admId = int.Parse(User.FindFirst("id")?.Value!);
-            var resultado = await _projetoService.AprovarVoluntario(projetoId, voluntarioId, admId);
+            var resultado = await _projetoService.DeletarProjeto(id, admId);
+
+            if (!resultado)
+                return BadRequest(new { sucesso = false, mensagem = "Falha ao deletar projeto" });
+
+            return Ok(new { sucesso = true, mensagem = "Projeto deletado com sucesso" });
+        }
+
+        // Adicione no ProjetoController
+        [HttpGet("estatisticas/total-inscritos")]
+        public async Task<IActionResult> ObterTotalInscritosPorProjeto()
+        {
+            var resultado = await _projetoService.ObterTotalInscritosPorProjeto();
+            return Ok(resultado);
+        }
+
+        [HttpGet("estatisticas/total-geral-inscritos")]
+        public async Task<IActionResult> ObterTotalGeralInscritos()
+        {
+            var total = await _projetoService.ObterTotalGeralInscritos();
+            return Ok(new { TotalInscritos = total });
+        }
+
+        [HttpGet("estatisticas/projeto-menos-escolhido")]
+        public async Task<IActionResult> ObterProjetoMenosEscolhido()
+        {
+            var projeto = await _projetoService.ObterProjetoMenosEscolhido();
+            if (projeto == null) return NotFound();
+
+            return Ok(new
+            {
+                projeto.Id,
+                projeto.Nome,
+                TotalInscritos = projeto.Voluntarios.Count(v => v.Status == StatusInscricao.Aprovado)
+            });
+        }
+
+        [HttpGet("estatisticas/atividade-mais-escolhida")]
+        public async Task<IActionResult> ObterAtividadeMaisEscolhida()
+        {
+            var atividade = await _projetoService.ObterAtividadeMaisEscolhida();
+            return Ok(new { AtividadeMaisEscolhida = atividade });
+        }
+
+        [Authorize(Roles = "Adm")]
+        [HttpPut("{projetoId}/voluntarios/{voluntarioId}/aprovar")]
+        public async Task<IActionResult> AprovarVoluntario(int projetoId, int voluntarioId, [FromBody] string? observacao = null)
+        {
+            var admId = int.Parse(User.FindFirst("id")?.Value!);
+            var resultado = await _projetoService.AprovarVoluntario(projetoId, voluntarioId, admId, observacao);
             if (!resultado) return BadRequest();
             return Ok(new { sucesso = true, mensagem = "Voluntário aprovado com sucesso" });
         }
 
         [Authorize(Roles = "Adm")]
         [HttpPut("{projetoId}/voluntarios/{voluntarioId}/rejeitar")]
-        public async Task<IActionResult> RejeitarVoluntario(int projetoId, int voluntarioId)
+        public async Task<IActionResult> RejeitarVoluntario(int projetoId, int voluntarioId, [FromBody] string? observacao = null)
         {
             var admId = int.Parse(User.FindFirst("id")?.Value!);
-            var resultado = await _projetoService.RejeitarVoluntario(projetoId, voluntarioId, admId);
+            var resultado = await _projetoService.RejeitarVoluntario(projetoId, voluntarioId, admId, observacao);
             if (!resultado) return BadRequest();
             return Ok(new { sucesso = true, mensagem = "Voluntário rejeitado com sucesso" });
         }
 
         [Authorize(Roles = "Adm")]
         [HttpGet("{projetoId}/voluntarios")]
-        public async Task<IActionResult> ListarVoluntarios(int projetoId)
+        public async Task<IActionResult> ListarVoluntarios(int projetoId, [FromQuery] StatusInscricao? status = null)
         {
             var admId = int.Parse(User.FindFirst("id")?.Value!);
-            var voluntarios = await _projetoService.ListarVoluntariosPorProjeto(projetoId, admId);
+            var projeto = await _context.Projetos
+                .FirstOrDefaultAsync(p => p.Id == projetoId && p.CriadoPorAdmId == admId);
+
+            if (projeto == null) return NotFound();
+
+            var query = _context.ProjetoVoluntarios
+                .Where(pv => pv.ProjetoId == projetoId)
+                .Include(pv => pv.Voluntario)
+                .AsQueryable();
+
+            if (status.HasValue)
+            {
+                query = query.Where(pv => pv.Status == status.Value);
+            }
+
+            var voluntarios = await query
+                .Select(pv => new
+                {
+                    pv.VoluntarioId,
+                    pv.Voluntario.Nome,
+                    pv.Voluntario.Email,
+                    pv.Status,
+                    pv.DataInscricao,
+                    pv.FuncaoDesejada
+                })
+                .ToListAsync();
+
             return Ok(voluntarios);
         }
     }

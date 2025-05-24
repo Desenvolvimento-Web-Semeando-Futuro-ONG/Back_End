@@ -8,6 +8,7 @@ namespace Back_End.Models
         public int VoluntarioId { get; set; }
         public Voluntario? Voluntario { get; set; }
 
+        public StatusInscricao Acao { get; set; }
         public DateTime DataInscricao { get; set; } = DateTime.Now;
         public StatusInscricao Status { get; set; } = StatusInscricao.Pendente;
         public string? FuncaoDesejada { get; set; }

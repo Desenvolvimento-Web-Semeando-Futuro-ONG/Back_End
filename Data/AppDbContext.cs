@@ -20,6 +20,7 @@ namespace Back_End.Data
         public DbSet<IntegracaoWhatsApp> IntegracoesWhatsApp { get; set; }
         public DbSet<Projeto> Projetos { get; set; }
         public DbSet<ProjetoVoluntario> ProjetoVoluntarios { get; set; }
+        public DbSet<HistoricoAprovacao> HistoricosAprovacao { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

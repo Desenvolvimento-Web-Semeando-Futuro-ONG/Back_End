@@ -17,14 +17,19 @@ namespace Back_End.Services.Interfaces
         Task<Projeto?> AtualizarProjetoAdmin(int id, ProjetoViewModel model, int admId);
         Task<Projeto?> AtivarProjeto(int id, int admId);
         Task<Projeto?> DesativarProjeto(int id, int admId);
-        Task<List<Projeto>> ListarProjetosDesativados(int admId);
 
+        Task<List<Projeto>> ListarProjetosDesativados(int admId);
+        Task<Dictionary<string, int>> ObterTotalInscritosPorProjeto();
+        Task<int> ObterTotalGeralInscritos();
+        Task<Projeto?> ObterProjetoMenosEscolhido();
+        Task<string?> ObterAtividadeMaisEscolhida();
         Task<bool> InscreverVoluntario(int projetoId, int voluntarioId);
         Task<bool> CancelarInscricao(int projetoId, int voluntarioId);
+        Task<bool> DeletarProjeto(int id, int admId);
         Task<IActionResult> CadastrarVoluntarioComInscricao([FromBody] CadastroComInscricaoViewModel model);
 
-        Task<bool> AprovarVoluntario(int projetoId, int voluntarioId, int admId);
-        Task<bool> RejeitarVoluntario(int projetoId, int voluntarioId, int admId);
+        Task<bool> AprovarVoluntario(int projetoId, int voluntarioId, int admId, string? observacao = null);
+        Task<bool> RejeitarVoluntario(int projetoId, int voluntarioId, int admId, string? observacao = null);
         Task<List<Voluntario>> ListarVoluntariosPorProjeto(int projetoId, int admId);
     }
 }
