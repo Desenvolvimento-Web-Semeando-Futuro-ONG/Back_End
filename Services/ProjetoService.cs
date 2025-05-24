@@ -178,6 +178,26 @@ namespace Back_End.Services
             return true;
         }
 
+        public async Task<bool> DeletarProjeto(int id, int admId)
+        {
+            var (isAdmin, _) = await GetAdminId(admId);
+            if (!isAdmin) return false;
+
+            var projeto = await _context.Projetos
+                .Include(p => p.Voluntarios)
+                .FirstOrDefaultAsync(p => p.Id == id && p.CriadoPorAdmId == admId);
+
+            if (projeto == null) return false;
+
+            // Remove todas as inscrições primeiro
+            _context.ProjetoVoluntarios.RemoveRange(projeto.Voluntarios);
+
+            _context.Projetos.Remove(projeto);
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
         public async Task<bool> CancelarInscricao(int projetoId, int usuarioId)
         {
             var (isVoluntario, voluntarioId) = await GetVoluntarioId(usuarioId);
@@ -337,7 +357,7 @@ namespace Back_End.Services
             return (true, string.Empty);
         }
 
-        public async Task<bool> AprovarVoluntario(int projetoId, int voluntarioId, int admId)
+        public async Task<bool> AprovarVoluntario(int projetoId, int voluntarioId, int admId, string? observacao = null)
         {
             var (isAdmin, _) = await GetAdminId(admId);
             if (!isAdmin) return false;
@@ -349,13 +369,25 @@ namespace Back_End.Services
                 .FirstOrDefaultAsync(pv => pv.ProjetoId == projetoId && pv.VoluntarioId == voluntarioId);
 
             if (inscricao == null) return false;
+
+            // Cria histórico antes de modificar
+            var historico = new HistoricoAprovacao
+            {
+                ProjetoId = projetoId,
+                VoluntarioId = voluntarioId,
+                AdministradorId = admId,
+                Acao = StatusInscricao.Aprovado,
+                DataAcao = DateTime.UtcNow,
+                Observacao = observacao
+            };
+            _context.HistoricosAprovacao.Add(historico);
 
             inscricao.Status = StatusInscricao.Aprovado;
             await _context.SaveChangesAsync();
             return true;
         }
 
-        public async Task<bool> RejeitarVoluntario(int projetoId, int voluntarioId, int admId)
+        public async Task<bool> RejeitarVoluntario(int projetoId, int voluntarioId, int admId, string? observacao = null)
         {
             var (isAdmin, _) = await GetAdminId(admId);
             if (!isAdmin) return false;
@@ -368,9 +400,58 @@ namespace Back_End.Services
 
             if (inscricao == null) return false;
 
+            // Cria histórico antes de modificar
+            var historico = new HistoricoAprovacao
+            {
+                ProjetoId = projetoId,
+                VoluntarioId = voluntarioId,
+                AdministradorId = admId,
+                Acao = StatusInscricao.Rejeitado,
+                DataAcao = DateTime.UtcNow,
+                Observacao = observacao
+            };
+            _context.HistoricosAprovacao.Add(historico);
+
             _context.ProjetoVoluntarios.Remove(inscricao);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        // Adicione no ProjetoService
+        public async Task<Dictionary<string, int>> ObterTotalInscritosPorProjeto()
+        {
+            return await _context.Projetos
+                .Where(p => p.Status == StatusProjeto.Ativo)
+                .Select(p => new
+                {
+                    p.Nome,
+                    TotalInscritos = p.Voluntarios.Count(v => v.Status == StatusInscricao.Aprovado)
+                })
+                .ToDictionaryAsync(x => x.Nome, x => x.TotalInscritos);
+        }
+
+        public async Task<int> ObterTotalGeralInscritos()
+        {
+            return await _context.ProjetoVoluntarios
+                .CountAsync(pv => pv.Status == StatusInscricao.Aprovado);
+        }
+
+        public async Task<Projeto?> ObterProjetoMenosEscolhido()
+        {
+            return await _context.Projetos
+                .Where(p => p.Status == StatusProjeto.Ativo)
+                .OrderBy(p => p.Voluntarios.Count(v => v.Status == StatusInscricao.Aprovado))
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<string?> ObterAtividadeMaisEscolhida()
+        {
+            return await _context.Projetos
+                .Where(p => p.Status == StatusProjeto.Ativo && p.EhEventoEspecifico && !string.IsNullOrEmpty(p.TipoEventoEspecifico))
+                .GroupBy(p => p.TipoEventoEspecifico)
+                .OrderByDescending(g => g.Count())
+                .Select(g => g.Key)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<List<Voluntario>> ListarVoluntariosPorProjeto(int projetoId, int admId)
