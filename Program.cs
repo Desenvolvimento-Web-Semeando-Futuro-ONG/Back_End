@@ -6,6 +6,7 @@ using Back_End.Services;
 using Back_End.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Diagnostics;
@@ -15,7 +16,12 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configuração do JSON Serializer para evitar referências circulares
+// Add configuration validation early
+if (string.IsNullOrEmpty(builder.Configuration["MongoDB:ConnectionString"]))
+{
+    throw new ApplicationException("MongoDB connection string is not configured");
+}
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -24,7 +30,21 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     });
 
-// Seus serviços originais
+// Configure MongoDB settings properly
+builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDB"));
+
+// Add services with validation
+builder.Services.AddScoped<GaleriaService>(provider =>
+{
+    var settings = provider.GetRequiredService<IOptions<MongoDBSettings>>().Value;
+    if (string.IsNullOrWhiteSpace(settings.ConnectionString))
+    {
+        throw new ApplicationException("MongoDB connection string is not configured");
+    }
+    return new GaleriaService(provider.GetRequiredService<IOptions<MongoDBSettings>>());
+});
+
+// Rest of your services...
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddCors(options =>
 {
@@ -39,9 +59,6 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDB"));
-builder.Services.AddSingleton<MongoDBSettings>();
 
 var key = Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Key"]!);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -60,8 +77,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// Seus serviços registrados originalmente
-builder.Services.AddScoped<GaleriaService>();
+// Add other services...
 builder.Services.AddScoped<IAdmService, AdmService>();
 builder.Services.AddScoped<IAutenticacaoService, AutenticacaoService>();
 builder.Services.AddScoped<IEventoService, EventoService>();
@@ -69,7 +85,6 @@ builder.Services.AddScoped<IVoluntarioService, VoluntarioService>();
 builder.Services.AddScoped<IDoadorService, DoadorService>();
 builder.Services.AddScoped<IProjetoService, ProjetoService>();
 
-// Configuração do Swagger original
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -101,7 +116,7 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Seu pipeline HTTP original
+// Rest of your Program.cs remains the same...
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -118,7 +133,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Sua inicialização de banco de dados original
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -141,7 +155,6 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Seu código para abrir o Swagger automaticamente
 try
 {
     Process.Start(new ProcessStartInfo
