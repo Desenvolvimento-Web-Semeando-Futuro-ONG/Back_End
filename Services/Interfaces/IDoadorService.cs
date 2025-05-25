@@ -7,6 +7,7 @@ namespace Back_End.Services.Interfaces
     {
         Task<Doador?> ObterPorCpf(string cpf);
         Task<Doador> Cadastrar(DoadorViewModel model);
+        Task<Doador> CadastrarComDoacao(DoadorViewModel model);
         Task<List<Doador>> ListarTodos();
         Task<List<DoacaoViewModel>> ListarDoacoes();
         Task<Doacao> RegistrarDoacao(int doadorId, decimal valor, string metodoPagamento);
