@@ -30,13 +30,29 @@ namespace Back_End.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // Verifica se já existe cadastro com este CPF
             var existente = await _doadorService.ObterPorCpf(model.CPF);
             if (existente != null)
                 return Ok(new { message = "Doador já cadastrado", doador = existente });
 
-            var doador = await _doadorService.Cadastrar(model);
-            return CreatedAtAction(nameof(ObterPorCpf), new { cpf = doador.CPF }, doador);
+            try
+            {
+                var doador = await _doadorService.Cadastrar(model);
+
+                var response = new
+                {
+                    message = model.ValorDoacao > 0
+                        ? "Doador cadastrado e doação registrada com sucesso"
+                        : "Doador cadastrado com sucesso",
+                    doador,
+                    doacaoRegistrada = model.ValorDoacao > 0
+                };
+
+                return CreatedAtAction(nameof(ObterPorCpf), new { cpf = doador.CPF }, response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Ocorreu um erro ao processar a solicitação", error = ex.Message });
+            }
         }
 
         [HttpGet("{cpf}")]
@@ -59,8 +75,36 @@ namespace Back_End.Controllers
         [HttpPost("{doadorId}/doacoes")]
         public async Task<IActionResult> RegistrarDoacao(int doadorId, [FromBody] DoacaoRegistroViewModel model)
         {
-            var doacao = await _doadorService.RegistrarDoacao(doadorId, model.Valor, model.MetodoPagamento);
-            return Ok(doacao);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var doacao = await _doadorService.RegistrarDoacao(
+                    doadorId,
+                    model.Valor,
+                    model.MetodoPagamento);
+
+                return Ok(new
+                {
+                    message = "Doação registrada com sucesso",
+                    doacao = new
+                    {
+                        doacao.Id,
+                        doacao.Valor,
+                        doacao.DataDoacao,
+                        doacao.MetodoPagamento
+                    }
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { message = "Ocorreu um erro ao registrar a doação" });
+            }
         }
     }
 }

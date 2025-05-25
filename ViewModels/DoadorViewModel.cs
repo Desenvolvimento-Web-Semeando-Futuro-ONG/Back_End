@@ -15,5 +15,11 @@ namespace Back_End.ViewModels
 
         [Required, StringLength(100), EmailAddress]
         public string Email { get; set; } = null!;
+
+        [Range(1.0, double.MaxValue, ErrorMessage = "O valor da doação deve ser maior que zero")]
+        public decimal ValorDoacao { get; set; }
+
+        [Required]
+        public string MetodoPagamento { get; set; } = null!;
     }
 }
