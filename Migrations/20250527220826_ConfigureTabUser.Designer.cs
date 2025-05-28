@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Back_End.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250428010744_InitialNewCreate")]
-    partial class InitialNewCreate
+    [Migration("20250527220826_ConfigureTabUser")]
+    partial class ConfigureTabUser
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -58,7 +58,8 @@ namespace Back_End.Migrations
 
                     b.Property<string>("SenhaHash")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<string>("Telefone")
                         .IsRequired()
@@ -82,7 +83,8 @@ namespace Back_End.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ComprovanteUrl")
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<DateTime>("DataDoacao")
                         .HasColumnType("timestamp with time zone");
@@ -92,7 +94,8 @@ namespace Back_End.Migrations
 
                     b.Property<string>("MetodoPagamento")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<decimal>("Valor")
                         .HasColumnType("numeric");
@@ -135,6 +138,9 @@ namespace Back_End.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.ToTable("Doadores");
@@ -156,11 +162,15 @@ namespace Back_End.Migrations
 
                     b.Property<string>("Descricao")
                         .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
+                        .HasMaxLength(100000)
+                        .HasColumnType("character varying(100000)");
+
+                    b.Property<bool>("EhRascunho")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("ImagemUrl")
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<string>("Nome")
                         .IsRequired()
@@ -192,6 +202,44 @@ namespace Back_End.Migrations
                     b.ToTable("EventoVoluntarios");
                 });
 
+            modelBuilder.Entity("Back_End.Models.HistoricoAprovacao", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Acao")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AdministradorId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("DataAcao")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Observacao")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("ProjetoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("VoluntarioId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdministradorId");
+
+                    b.HasIndex("ProjetoId");
+
+                    b.HasIndex("VoluntarioId");
+
+                    b.ToTable("HistoricosAprovacao");
+                });
+
             modelBuilder.Entity("Back_End.Models.IntegracaoWhatsApp", b =>
                 {
                     b.Property<int>("Id")
@@ -205,18 +253,92 @@ namespace Back_End.Migrations
 
                     b.Property<string>("Destinatario")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<bool>("Enviado")
                         .HasColumnType("boolean");
 
                     b.Property<string>("Mensagem")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.HasKey("Id");
 
                     b.ToTable("IntegracoesWhatsApp");
+                });
+
+            modelBuilder.Entity("Back_End.Models.Projeto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CriadoPorAdmId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DataFim")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("DataInicio")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<bool>("EhEventoEspecifico")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TipoEventoEspecifico")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CriadoPorAdmId");
+
+                    b.ToTable("Projetos");
+                });
+
+            modelBuilder.Entity("Back_End.Models.ProjetoVoluntario", b =>
+                {
+                    b.Property<int>("ProjetoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("VoluntarioId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Acao")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("DataInscricao")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FuncaoDesejada")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ProjetoId", "VoluntarioId");
+
+                    b.HasIndex("VoluntarioId");
+
+                    b.ToTable("ProjetoVoluntarios");
                 });
 
             modelBuilder.Entity("Back_End.Models.Publicacao", b =>
@@ -235,7 +357,8 @@ namespace Back_End.Migrations
 
                     b.Property<string>("Texto")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.HasKey("Id");
 
@@ -285,6 +408,9 @@ namespace Back_End.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.ToTable("Voluntarios");
@@ -331,6 +457,63 @@ namespace Back_End.Migrations
                     b.Navigation("Voluntario");
                 });
 
+            modelBuilder.Entity("Back_End.Models.HistoricoAprovacao", b =>
+                {
+                    b.HasOne("Back_End.Models.Adm", "Administrador")
+                        .WithMany()
+                        .HasForeignKey("AdministradorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Back_End.Models.Projeto", "Projeto")
+                        .WithMany()
+                        .HasForeignKey("ProjetoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Back_End.Models.Voluntario", "Voluntario")
+                        .WithMany()
+                        .HasForeignKey("VoluntarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Administrador");
+
+                    b.Navigation("Projeto");
+
+                    b.Navigation("Voluntario");
+                });
+
+            modelBuilder.Entity("Back_End.Models.Projeto", b =>
+                {
+                    b.HasOne("Back_End.Models.Adm", "CriadoPorAdm")
+                        .WithMany()
+                        .HasForeignKey("CriadoPorAdmId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CriadoPorAdm");
+                });
+
+            modelBuilder.Entity("Back_End.Models.ProjetoVoluntario", b =>
+                {
+                    b.HasOne("Back_End.Models.Projeto", "Projeto")
+                        .WithMany("Voluntarios")
+                        .HasForeignKey("ProjetoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Back_End.Models.Voluntario", "Voluntario")
+                        .WithMany("Projetos")
+                        .HasForeignKey("VoluntarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Projeto");
+
+                    b.Navigation("Voluntario");
+                });
+
             modelBuilder.Entity("Back_End.Models.Publicacao", b =>
                 {
                     b.HasOne("Back_End.Models.Adm", "Adm")
@@ -352,9 +535,16 @@ namespace Back_End.Migrations
                     b.Navigation("Voluntarios");
                 });
 
+            modelBuilder.Entity("Back_End.Models.Projeto", b =>
+                {
+                    b.Navigation("Voluntarios");
+                });
+
             modelBuilder.Entity("Back_End.Models.Voluntario", b =>
                 {
                     b.Navigation("Eventos");
+
+                    b.Navigation("Projetos");
                 });
 #pragma warning restore 612, 618
         }

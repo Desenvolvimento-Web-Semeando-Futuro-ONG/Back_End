@@ -238,22 +238,42 @@ namespace Back_End.Controllers
 
         [Authorize(Roles = "Adm")]
         [HttpPut("{projetoId}/voluntarios/{voluntarioId}/aprovar")]
-        public async Task<IActionResult> AprovarVoluntario(int projetoId, int voluntarioId, [FromBody] string? observacao = null)
+        public async Task<IActionResult> AprovarVoluntario(int projetoId, int voluntarioId)
         {
-            var admId = int.Parse(User.FindFirst("id")?.Value!);
-            var resultado = await _projetoService.AprovarVoluntario(projetoId, voluntarioId, admId, observacao);
-            if (!resultado) return BadRequest();
-            return Ok(new { sucesso = true, mensagem = "Voluntário aprovado com sucesso" });
+            try
+            {
+                var admId = int.Parse(User.FindFirst("id")?.Value!);
+                var resultado = await _projetoService.AprovarVoluntario(projetoId, voluntarioId, admId, null);
+
+                if (!resultado)
+                    return BadRequest(new { sucesso = false, mensagem = "Falha ao aprovar voluntário" });
+
+                return Ok(new { sucesso = true, mensagem = "Voluntário aprovado com sucesso" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { sucesso = false, mensagem = ex.Message });
+            }
         }
 
         [Authorize(Roles = "Adm")]
         [HttpPut("{projetoId}/voluntarios/{voluntarioId}/rejeitar")]
-        public async Task<IActionResult> RejeitarVoluntario(int projetoId, int voluntarioId, [FromBody] string? observacao = null)
+        public async Task<IActionResult> RejeitarVoluntario(int projetoId, int voluntarioId)
         {
-            var admId = int.Parse(User.FindFirst("id")?.Value!);
-            var resultado = await _projetoService.RejeitarVoluntario(projetoId, voluntarioId, admId, observacao);
-            if (!resultado) return BadRequest();
-            return Ok(new { sucesso = true, mensagem = "Voluntário rejeitado com sucesso" });
+            try
+            {
+                var admId = int.Parse(User.FindFirst("id")?.Value!);
+                var resultado = await _projetoService.RejeitarVoluntario(projetoId, voluntarioId, admId, null);
+
+                if (!resultado)
+                    return BadRequest(new { sucesso = false, mensagem = "Falha ao rejeitar voluntário" });
+
+                return Ok(new { sucesso = true, mensagem = "Voluntário rejeitado com sucesso" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { sucesso = false, mensagem = ex.Message });
+            }
         }
 
         [Authorize(Roles = "Adm")]
