@@ -2,7 +2,6 @@
 using Back_End.Enums;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
-using System;
 
 namespace Back_End.Data
 {
@@ -10,9 +9,11 @@ namespace Back_End.Data
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
+        //public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Adm> Adms { get; set; }
         public DbSet<Voluntario> Voluntarios { get; set; }
         public DbSet<Doador> Doadores { get; set; }
+
         public DbSet<Evento> Eventos { get; set; }
         public DbSet<EventoVoluntario> EventoVoluntarios { get; set; }
         public DbSet<Doacao> Doacoes { get; set; }
@@ -24,16 +25,39 @@ namespace Back_End.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder);
+           // modelBuilder.Entity<Usuario>().ToTable("Usuarios"); // tabela base
 
-            // Relação Projeto -> CriadoPorAdm
+            //modelBuilder.Entity<Adm>().ToTable("Adms");
+            //modelBuilder.Entity<Voluntario>().ToTable("Voluntarios");
+            //modelBuilder.Entity<Doador>().ToTable("Doadores");
+
+            //modelBuilder.Entity<Adm>(entity =>
+            //{
+            //    entity.HasIndex(a => a.CPF).IsUnique();
+            //    entity.HasIndex(a => a.Email).IsUnique();
+            //    entity.HasIndex(a => a.Login).IsUnique();
+            //    entity.HasIndex(a => a.s).IsUnique();
+
+            //});
+
+            //modelBuilder.Entity<Voluntario>(entity =>
+            //{
+            //    entity.HasIndex(v => v.CPF).IsUnique();
+            //    entity.HasIndex(v => v.Email).IsUnique();
+            //});
+
+            //modelBuilder.Entity<Doador>(entity =>
+            //{
+            //    entity.HasIndex(d => d.CPF).IsUnique();
+            //    entity.HasIndex(d => d.Email).IsUnique();
+            //});
+
             modelBuilder.Entity<Projeto>()
                 .HasOne(p => p.CriadoPorAdm)
                 .WithMany()
                 .HasForeignKey(p => p.CriadoPorAdmId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Relação muitos-para-muitos: Projeto <-> Voluntario
             modelBuilder.Entity<ProjetoVoluntario>()
                 .HasKey(pv => new { pv.ProjetoId, pv.VoluntarioId });
 
@@ -49,7 +73,6 @@ namespace Back_End.Data
                 .HasForeignKey(pv => pv.VoluntarioId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Relação muitos-para-muitos: Evento <-> Voluntario
             modelBuilder.Entity<EventoVoluntario>()
                 .HasKey(ev => new { ev.EventoId, ev.VoluntarioId });
 
@@ -65,7 +88,6 @@ namespace Back_End.Data
                 .HasForeignKey(ev => ev.VoluntarioId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Definir comprimento máximo padrão para propriedades string
             foreach (var property in modelBuilder.Model.GetEntityTypes()
                 .SelectMany(t => t.GetProperties())
                 .Where(p => p.ClrType == typeof(string)))
@@ -75,6 +97,8 @@ namespace Back_End.Data
                     property.SetMaxLength(256);
                 }
             }
+
+            base.OnModelCreating(modelBuilder);
         }
     }
 }

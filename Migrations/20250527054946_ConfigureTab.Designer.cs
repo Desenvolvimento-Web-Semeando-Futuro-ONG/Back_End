@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Back_End.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250520023422_fixdDraftColumnsToEvento")]
-    partial class fixdDraftColumnsToEvento
+    [Migration("20250527054946_ConfigureTab")]
+    partial class ConfigureTab
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,55 +24,6 @@ namespace Back_End.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("Back_End.Models.Adm", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CPF")
-                        .IsRequired()
-                        .HasMaxLength(11)
-                        .HasColumnType("character varying(11)");
-
-                    b.Property<DateTime>("DataCadastro")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Login")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("Nome")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("SenhaHash")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("Telefone")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<int>("Tipo")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Adms");
-                });
 
             modelBuilder.Entity("Back_End.Models.Doacao", b =>
                 {
@@ -105,42 +56,6 @@ namespace Back_End.Migrations
                     b.HasIndex("DoadorId");
 
                     b.ToTable("Doacoes");
-                });
-
-            modelBuilder.Entity("Back_End.Models.Doador", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CPF")
-                        .IsRequired()
-                        .HasMaxLength(11)
-                        .HasColumnType("character varying(11)");
-
-                    b.Property<DateTime>("DataCadastro")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Nome")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Telefone")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Doadores");
                 });
 
             modelBuilder.Entity("Back_End.Models.Evento", b =>
@@ -197,6 +112,44 @@ namespace Back_End.Migrations
                     b.HasIndex("VoluntarioId");
 
                     b.ToTable("EventoVoluntarios");
+                });
+
+            modelBuilder.Entity("Back_End.Models.HistoricoAprovacao", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Acao")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AdministradorId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("DataAcao")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Observacao")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("ProjetoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("VoluntarioId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdministradorId");
+
+                    b.HasIndex("ProjetoId");
+
+                    b.HasIndex("VoluntarioId");
+
+                    b.ToTable("HistoricosAprovacao");
                 });
 
             modelBuilder.Entity("Back_End.Models.IntegracaoWhatsApp", b =>
@@ -280,6 +233,9 @@ namespace Back_End.Migrations
                     b.Property<int>("VoluntarioId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("Acao")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("DataInscricao")
                         .HasColumnType("timestamp with time zone");
 
@@ -323,7 +279,7 @@ namespace Back_End.Migrations
                     b.ToTable("Publicacoes");
                 });
 
-            modelBuilder.Entity("Back_End.Models.Voluntario", b =>
+            modelBuilder.Entity("Back_End.Models.Usuario", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -339,20 +295,10 @@ namespace Back_End.Migrations
                     b.Property<DateTime>("DataCadastro")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Disponibilidade")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Habilidades")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("Nome")
                         .IsRequired()
@@ -364,9 +310,76 @@ namespace Back_End.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
-                    b.ToTable("Voluntarios");
+                    b.ToTable("Usuarios", (string)null);
+
+                    b.UseTptMappingStrategy();
+                });
+
+            modelBuilder.Entity("Back_End.Models.Adm", b =>
+                {
+                    b.HasBaseType("Back_End.Models.Usuario");
+
+                    b.Property<string>("Login")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("SenhaHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasIndex("CPF")
+                        .IsUnique();
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("Login")
+                        .IsUnique();
+
+                    b.ToTable("Adms", (string)null);
+                });
+
+            modelBuilder.Entity("Back_End.Models.Doador", b =>
+                {
+                    b.HasBaseType("Back_End.Models.Usuario");
+
+                    b.HasIndex("CPF")
+                        .IsUnique();
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("Doadores", (string)null);
+                });
+
+            modelBuilder.Entity("Back_End.Models.Voluntario", b =>
+                {
+                    b.HasBaseType("Back_End.Models.Usuario");
+
+                    b.Property<string>("Disponibilidade")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Habilidades")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasIndex("CPF")
+                        .IsUnique();
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("Voluntarios", (string)null);
                 });
 
             modelBuilder.Entity("Back_End.Models.Doacao", b =>
@@ -406,6 +419,33 @@ namespace Back_End.Migrations
                         .IsRequired();
 
                     b.Navigation("Evento");
+
+                    b.Navigation("Voluntario");
+                });
+
+            modelBuilder.Entity("Back_End.Models.HistoricoAprovacao", b =>
+                {
+                    b.HasOne("Back_End.Models.Adm", "Administrador")
+                        .WithMany()
+                        .HasForeignKey("AdministradorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Back_End.Models.Projeto", "Projeto")
+                        .WithMany()
+                        .HasForeignKey("ProjetoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Back_End.Models.Voluntario", "Voluntario")
+                        .WithMany()
+                        .HasForeignKey("VoluntarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Administrador");
+
+                    b.Navigation("Projeto");
 
                     b.Navigation("Voluntario");
                 });
@@ -451,9 +491,31 @@ namespace Back_End.Migrations
                     b.Navigation("Adm");
                 });
 
+            modelBuilder.Entity("Back_End.Models.Adm", b =>
+                {
+                    b.HasOne("Back_End.Models.Usuario", null)
+                        .WithOne()
+                        .HasForeignKey("Back_End.Models.Adm", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Back_End.Models.Doador", b =>
                 {
-                    b.Navigation("Doacoes");
+                    b.HasOne("Back_End.Models.Usuario", null)
+                        .WithOne()
+                        .HasForeignKey("Back_End.Models.Doador", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Back_End.Models.Voluntario", b =>
+                {
+                    b.HasOne("Back_End.Models.Usuario", null)
+                        .WithOne()
+                        .HasForeignKey("Back_End.Models.Voluntario", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Back_End.Models.Evento", b =>
@@ -464,6 +526,11 @@ namespace Back_End.Migrations
             modelBuilder.Entity("Back_End.Models.Projeto", b =>
                 {
                     b.Navigation("Voluntarios");
+                });
+
+            modelBuilder.Entity("Back_End.Models.Doador", b =>
+                {
+                    b.Navigation("Doacoes");
                 });
 
             modelBuilder.Entity("Back_End.Models.Voluntario", b =>

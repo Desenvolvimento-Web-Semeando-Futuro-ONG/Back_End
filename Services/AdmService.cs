@@ -165,7 +165,6 @@ namespace Back_End.Services
                     CPF = admVM.CPF,
                     Email = admVM.Email,
                     Login = admVM.Login,
-                    Tipo = TipoUsuario.Adm
                 };
 
                 adm.DefinirSenha(admVM.Senha);
@@ -222,7 +221,7 @@ namespace Back_End.Services
             return true;
         }
 
-        public async Task<AdmRespostaViewModel> ObterPerfilAdm(int id)
+        public async Task<AdmRespostaViewModel?> ObterPerfilAdm(int id) 
         {
             var adm = await _context.Adms.FindAsync(id);
             if (adm == null) return null;
@@ -231,9 +230,9 @@ namespace Back_End.Services
             {
                 Id = adm.Id,
                 Nome = adm.Nome,
-                Telefone = adm.Telefone, 
-                CPF = adm.CPF, 
-                Email = adm.Email, 
+                Telefone = adm.Telefone,
+                CPF = adm.CPF,
+                Email = adm.Email,
                 Login = adm.Login
             };
         }

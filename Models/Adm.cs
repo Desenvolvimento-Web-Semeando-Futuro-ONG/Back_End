@@ -14,7 +14,10 @@ namespace Back_End.Models
         [Required]
         public string SenhaHash { get; set; } = null!;
 
-        public TipoUsuario Tipo { get; set; } = TipoUsuario.Adm;
+        public Adm()
+        {
+            Tipo = TipoUsuario.Adm;
+        }
 
         public void DefinirSenha(string senha)
         {

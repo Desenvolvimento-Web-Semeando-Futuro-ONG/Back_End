@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Back_End.Enums;
 
 namespace Back_End.Models
 {
@@ -13,12 +14,19 @@ namespace Back_End.Models
         [Required, StringLength(20)]
         public string Telefone { get; set; } = null!;
 
-        [Required, StringLength(11), RegularExpression(@"^\d{11}$", ErrorMessage = "CPF deve conter 11 dígitos")]
+        [Required, StringLength(11), RegularExpression(@"^\d{11}$")]
         public string CPF { get; set; } = null!;
 
         [Required, StringLength(100), EmailAddress]
         public string Email { get; set; } = null!;
 
         public DateTime DataCadastro { get; set; } = DateTime.UtcNow;
+
+        public TipoUsuario Tipo { get; internal set; }
+
+        public void DefinirTipo(TipoUsuario tipo)
+        {
+            Tipo = tipo;
+        }
     }
 }

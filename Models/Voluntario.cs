@@ -1,3 +1,4 @@
+using Back_End.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
@@ -7,6 +8,11 @@ namespace Back_End.Models
     {
         [Required, StringLength(500)]
         public string Habilidades { get; set; } = null!;
+
+        public Voluntario()
+        {
+            Tipo = TipoUsuario.Voluntario;
+        }
 
         [Required, StringLength(500)]
         public string Disponibilidade { get; set; } = null!;

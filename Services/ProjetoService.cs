@@ -370,7 +370,6 @@ namespace Back_End.Services
 
             if (inscricao == null) return false;
 
-            // Cria histórico antes de modificar
             var historico = new HistoricoAprovacao
             {
                 ProjetoId = projetoId,
@@ -382,7 +381,23 @@ namespace Back_End.Services
             };
             _context.HistoricosAprovacao.Add(historico);
 
-            inscricao.Status = StatusInscricao.Aprovado;
+            _context.ProjetoVoluntarios.Remove(inscricao);
+
+            var projeto = await _context.Projetos
+                .Include(p => p.Voluntarios)
+                .FirstOrDefaultAsync(p => p.Id == projetoId);
+
+            if (projeto != null)
+            {
+                projeto.Voluntarios.Add(new ProjetoVoluntario
+                {
+                    VoluntarioId = voluntarioId,
+                    Status = StatusInscricao.Aprovado,
+                    DataInscricao = DateTime.UtcNow,
+                    FuncaoDesejada = inscricao.FuncaoDesejada
+                });
+            }
+
             await _context.SaveChangesAsync();
             return true;
         }
@@ -417,7 +432,6 @@ namespace Back_End.Services
             return true;
         }
 
-        // Adicione no ProjetoService
         public async Task<Dictionary<string, int>> ObterTotalInscritosPorProjeto()
         {
             return await _context.Projetos
@@ -425,15 +439,39 @@ namespace Back_End.Services
                 .Select(p => new
                 {
                     p.Nome,
-                    TotalInscritos = p.Voluntarios.Count(v => v.Status == StatusInscricao.Aprovado)
+                    TotalInscritos = p.Voluntarios.Count()
                 })
                 .ToDictionaryAsync(x => x.Nome, x => x.TotalInscritos);
+        }
+
+        public async Task<Dictionary<string, Dictionary<string, int>>> ObterEstatisticasCompletasPorProjeto()
+        {
+            return await _context.Projetos
+                .Where(p => p.Status == StatusProjeto.Ativo)
+                .Select(p => new
+                {
+                    p.Nome,
+                    Total = p.Voluntarios.Count(),
+                    Aprovados = p.Voluntarios.Count(v => v.Status == StatusInscricao.Aprovado),
+                    Pendentes = p.Voluntarios.Count(v => v.Status == StatusInscricao.Pendente),
+                    Rejeitados = p.Voluntarios.Count(v => v.Status == StatusInscricao.Rejeitado)
+                })
+                .ToDictionaryAsync(
+                    x => x.Nome,
+                    x => new Dictionary<string, int>
+                    {
+                { "Total", x.Total },
+                { "Aprovados", x.Aprovados },
+                { "Pendentes", x.Pendentes },
+                { "Rejeitados", x.Rejeitados }
+                    }
+                );
         }
 
         public async Task<int> ObterTotalGeralInscritos()
         {
             return await _context.ProjetoVoluntarios
-                .CountAsync(pv => pv.Status == StatusInscricao.Aprovado);
+                .CountAsync();
         }
 
         public async Task<Projeto?> ObterProjetoMenosEscolhido()
