@@ -122,16 +122,13 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Pipeline HTTP
-if (app.Environment.IsDevelopment())
+// Habilita Swagger em qualquer ambiente (produção e desenvolvimento)
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "API ONG v1");
-        c.RoutePrefix = "swagger";
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "API ONG v1");
+    c.RoutePrefix = "swagger"; 
+});
 
 app.UseHttpsRedirection();
 
@@ -142,36 +139,11 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Inicialização do banco de dados
-//using (var scope = app.Services.CreateScope())
-//{
-//    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-//    db.Database.Migrate();
-
-//    if (!db.Adms.Any())
-//    {
-//        var admin = new Adm
-//        {
-//            Nome = "Admin",
-//            Email = "admin@ong.com",
-//            Telefone = "11999999999",
-//            CPF = "12345678901",
-//            Tipo = TipoUsuario.Adm,
-//            Login = "admin",
-//        };
-//        admin.DefinirSenha("123456");
-//        db.Adms.Add(admin);
-//        db.SaveChanges();
-//    }
-//}
-var adm = new Adm();
-
 try
 {
     Process.Start(new ProcessStartInfo
     {
-        FileName = "chrome.exe",
-        Arguments = "http://localhost:5189/swagger",
+        FileName = "http://localhost:5189/swagger",
         UseShellExecute = true
     });
 }
@@ -180,4 +152,4 @@ catch
     Console.WriteLine("Acesse: http://localhost:5189/swagger");
 }
 
-app.Run();
+app.Run("http://localhost:5189");
