@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: backend-semear
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    branch: main
+    healthCheckPath: /swagger/index.html
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
