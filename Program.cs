@@ -16,6 +16,10 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Ajuste para usar porta da variável de ambiente PORT ou 8080
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.UseUrls($"http://*:{port}");
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -122,13 +126,17 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Habilita Swagger em qualquer ambiente (produção e desenvolvimento)
-app.UseSwagger();
-app.UseSwaggerUI(c =>
+var swaggerEnabled = builder.Configuration.GetValue<bool?>("Swagger:Enable") ?? true;
+
+if (swaggerEnabled)
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "API ONG v1");
-    c.RoutePrefix = "swagger"; 
-});
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "API ONG v1");
+        c.RoutePrefix = "swagger";
+    });
+}
 
 app.UseHttpsRedirection();
 
@@ -139,17 +147,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-try
-{
-    Process.Start(new ProcessStartInfo
-    {
-        FileName = "http://localhost:5189/swagger",
-        UseShellExecute = true
-    });
-}
-catch
-{
-    Console.WriteLine("Acesse: http://localhost:5189/swagger");
-}
-
-app.Run("http://localhost:5189");
+app.Run();
