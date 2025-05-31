@@ -24,30 +24,19 @@ namespace Back_End.Services
         public async Task<string?> LoginAdm(LoginViewModel loginVM)
         {
             if (loginVM == null || string.IsNullOrWhiteSpace(loginVM.Login))
-            {
                 return null;
-            }
 
-            var adm = await _context.Adms
-                .FirstOrDefaultAsync(a => a.Login == loginVM.Login);
-
-            if (adm == null || !adm.Autenticar(loginVM.Senha))
-            {
-                return null;
-            }
-
-            return GerarTokenAdm(adm);
+            var adm = await _context.Adms.FirstOrDefaultAsync(a => a.Login == loginVM.Login);
+            return adm != null && adm.Autenticar(loginVM.Senha) ? GerarTokenAdm(adm) : null;
         }
 
         public string GerarTokenVoluntario(Voluntario voluntario)
         {
             if (voluntario == null)
-            {
                 throw new ArgumentNullException(nameof(voluntario));
-            }
 
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"] ?? throw new InvalidOperationException("Chave JWT não configurada"));
+            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]!);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -66,19 +55,16 @@ namespace Back_End.Services
                 Audience = _configuration["Jwt:Audience"]
             };
 
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
+            return tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));
         }
 
         public string GerarTokenAdm(Adm adm)
         {
             if (adm == null)
-            {
                 throw new ArgumentNullException(nameof(adm));
-            }
 
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"] ?? throw new InvalidOperationException("Chave JWT não configurada"));
+            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]!);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -96,8 +82,79 @@ namespace Back_End.Services
                 Audience = _configuration["Jwt:Audience"]
             };
 
+            return tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));
+        }
+
+        public async Task<bool> SolicitarRedefinicaoSenha(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            var adm = await _context.Adms.FirstOrDefaultAsync(a => a.Email == email);
+            if (adm == null)
+                return false;
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]!);
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim("id", adm.Id.ToString()),
+                    new Claim("action", "reset_password")
+                }),
+                Expires = DateTime.UtcNow.AddHours(1),
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(key),
+                    SecurityAlgorithms.HmacSha256Signature)
+            };
+
             var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
+            var resetLink = $"{_configuration["AppUrl"]}/reset-password?token={tokenHandler.WriteToken(token)}";
+
+            Console.WriteLine($"Link de redefinição para {adm.Email}: {resetLink}");
+            return true;
+        }
+
+        public async Task<bool> RedefinirSenha(RedefinirSenhaViewModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model.Token) || string.IsNullOrWhiteSpace(model.NovaSenha))
+                return false;
+
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]!);
+
+                tokenHandler.ValidateToken(model.Token, new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ClockSkew = TimeSpan.Zero
+                }, out var validatedToken);
+
+                var jwtToken = (JwtSecurityToken)validatedToken;
+                var userId = jwtToken.Claims.First(x => x.Type == "id").Value;
+                var action = jwtToken.Claims.First(x => x.Type == "action").Value;
+
+                if (action != "reset_password")
+                    return false;
+
+                var adm = await _context.Adms.FindAsync(int.Parse(userId));
+                if (adm == null)
+                    return false;
+
+                adm.RedefinirSenha(model.NovaSenha);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

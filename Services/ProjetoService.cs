@@ -415,7 +415,6 @@ namespace Back_End.Services
 
             if (inscricao == null) return false;
 
-            // Cria histórico antes de modificar
             var historico = new HistoricoAprovacao
             {
                 ProjetoId = projetoId,
@@ -428,6 +427,38 @@ namespace Back_End.Services
             _context.HistoricosAprovacao.Add(historico);
 
             _context.ProjetoVoluntarios.Remove(inscricao);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> ConcluirParticipacao(int projetoId, int voluntarioId, int admId, string? observacao = null)
+        {
+            var (isAdmin, _) = await GetAdminId(admId);
+            if (!isAdmin) return false;
+
+            var (isVoluntario, _) = await GetVoluntarioId(voluntarioId);
+            if (!isVoluntario) return false;
+
+            var participacao = await _context.ProjetoVoluntarios
+                .FirstOrDefaultAsync(pv => pv.ProjetoId == projetoId &&
+                                         pv.VoluntarioId == voluntarioId &&
+                                         pv.Status == StatusInscricao.Aprovado);
+
+            if (participacao == null) return false;
+
+            var historico = new HistoricoAprovacao
+            {
+                ProjetoId = projetoId,
+                VoluntarioId = voluntarioId,
+                AdministradorId = admId,
+                Acao = StatusInscricao.Concluido,
+                DataAcao = DateTime.UtcNow,
+                Observacao = observacao
+            };
+            _context.HistoricosAprovacao.Add(historico);
+
+            _context.ProjetoVoluntarios.Remove(participacao);
+
             await _context.SaveChangesAsync();
             return true;
         }
@@ -454,16 +485,18 @@ namespace Back_End.Services
                     Total = p.Voluntarios.Count(),
                     Aprovados = p.Voluntarios.Count(v => v.Status == StatusInscricao.Aprovado),
                     Pendentes = p.Voluntarios.Count(v => v.Status == StatusInscricao.Pendente),
-                    Rejeitados = p.Voluntarios.Count(v => v.Status == StatusInscricao.Rejeitado)
+                    Rejeitados = p.Voluntarios.Count(v => v.Status == StatusInscricao.Rejeitado),
+                    Concluidos = p.Voluntarios.Count(v => v.Status == StatusInscricao.Concluido)
                 })
                 .ToDictionaryAsync(
                     x => x.Nome,
                     x => new Dictionary<string, int>
                     {
-                { "Total", x.Total },
-                { "Aprovados", x.Aprovados },
-                { "Pendentes", x.Pendentes },
-                { "Rejeitados", x.Rejeitados }
+                        { "Total", x.Total },
+                        { "Aprovados", x.Aprovados },
+                        { "Pendentes", x.Pendentes },
+                        { "Rejeitados", x.Rejeitados },
+                        { "Concluidos", x.Concluidos }
                     }
                 );
         }

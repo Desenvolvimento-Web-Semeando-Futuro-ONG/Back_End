@@ -13,9 +13,9 @@ namespace Back_End.Controllers
     public class ProjetoController : ControllerBase
     {
         private readonly IProjetoService _projetoService;
-        private readonly AppDbContext _context; 
+        private readonly AppDbContext _context;
 
-        public ProjetoController(IProjetoService projetoService, AppDbContext context) 
+        public ProjetoController(IProjetoService projetoService, AppDbContext context)
         {
             _projetoService = projetoService;
             _context = context;
@@ -90,7 +90,6 @@ namespace Back_End.Controllers
             return await _projetoService.CadastrarVoluntarioComInscricao(model);
         }
 
-        // Apenas ADMs
         [Authorize(Roles = "Adm")]
         [HttpGet("admin")]
         public async Task<IActionResult> ListarTodosAdmin()
@@ -200,7 +199,6 @@ namespace Back_End.Controllers
             return Ok(new { sucesso = true, mensagem = "Projeto deletado com sucesso" });
         }
 
-        // Adicione no ProjetoController
         [HttpGet("estatisticas/total-inscritos")]
         public async Task<IActionResult> ObterTotalInscritosPorProjeto()
         {
@@ -277,6 +275,26 @@ namespace Back_End.Controllers
         }
 
         [Authorize(Roles = "Adm")]
+        [HttpPut("{projetoId}/voluntarios/{voluntarioId}/concluir")]
+        public async Task<IActionResult> ConcluirParticipacao(int projetoId, int voluntarioId)
+        {
+            try
+            {
+                var admId = int.Parse(User.FindFirst("id")?.Value!);
+                var resultado = await _projetoService.ConcluirParticipacao(projetoId, voluntarioId, admId, null);
+
+                if (!resultado)
+                    return BadRequest(new { sucesso = false, mensagem = "Falha ao marcar participação como concluída" });
+
+                return Ok(new { sucesso = true, mensagem = "Participação concluída com sucesso" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { sucesso = false, mensagem = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Adm")]
         [HttpGet("{projetoId}/voluntarios")]
         public async Task<IActionResult> ListarVoluntarios(int projetoId, [FromQuery] StatusInscricao? status = null)
         {
@@ -309,6 +327,15 @@ namespace Back_End.Controllers
                 .ToListAsync();
 
             return Ok(voluntarios);
+        }
+
+        [Authorize(Roles = "Adm")]
+        [HttpGet("estatisticas")]
+        public async Task<IActionResult> ObterEstatisticasCompletasPorProjeto()
+        {
+            var admId = int.Parse(User.FindFirst("id")?.Value!);
+            var estatisticas = await _projetoService.ObterEstatisticasCompletasPorProjeto();
+            return Ok(estatisticas);
         }
     }
 }

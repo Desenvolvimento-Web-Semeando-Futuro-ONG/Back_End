@@ -20,6 +20,7 @@ namespace Back_End.Services.Interfaces
 
         Task<List<Projeto>> ListarProjetosDesativados(int admId);
         Task<Dictionary<string, int>> ObterTotalInscritosPorProjeto();
+        Task<Dictionary<string, Dictionary<string, int>>> ObterEstatisticasCompletasPorProjeto();
         Task<int> ObterTotalGeralInscritos();
         Task<Projeto?> ObterProjetoMenosEscolhido();
         Task<string?> ObterAtividadeMaisEscolhida();
@@ -30,6 +31,7 @@ namespace Back_End.Services.Interfaces
 
         Task<bool> AprovarVoluntario(int projetoId, int voluntarioId, int admId, string? observacao = null);
         Task<bool> RejeitarVoluntario(int projetoId, int voluntarioId, int admId, string? observacao = null);
+        Task<bool> ConcluirParticipacao(int projetoId, int voluntarioId, int admId, string? observacao = null);
         Task<List<Voluntario>> ListarVoluntariosPorProjeto(int projetoId, int admId);
     }
 }
