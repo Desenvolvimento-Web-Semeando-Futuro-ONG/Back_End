@@ -14,4 +14,5 @@ COPY --from=build /app/out ./
 
 # Expõe a porta padrão do ASP.NET Core
 EXPOSE 80
-ENTRYPOINT ["dotnet", "Back_End.dll"]
+ENTRYPOINT ["dotnet", "Back_End.dll"]  
+
