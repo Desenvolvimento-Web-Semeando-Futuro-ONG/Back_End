@@ -6,7 +6,6 @@ using Back_End.Services;
 using Back_End.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
@@ -15,10 +14,7 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Ajuste de porta para funcionar no Render
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-builder.WebHost.UseUrls($"http://*:{port}");
-
+// Controllers com configuração de JSON
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -27,12 +23,12 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     });
 
-// Configuração do CORS para web/mobile
+// CORS
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? new[]
 {
     "http://localhost:5173",
     "http://localhost:5174",
-    "http://10.0.2.2", // Android Emulator
+    "http://10.0.2.2",
     "capacitor://localhost",
     "ionic://localhost"
 };
@@ -49,13 +45,15 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Banco de dados PostgreSQL
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// MongoDB
 builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDB"));
 builder.Services.AddSingleton<MongoDBSettings>();
 
-// Configuração JWT
+// JWT
 var key = Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Key"]!);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -71,6 +69,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(key),
             ClockSkew = TimeSpan.Zero
         };
+
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
@@ -84,6 +83,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// Injeções de dependência
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<GaleriaService>();
 builder.Services.AddScoped<IAdmService, AdmService>();
@@ -93,6 +93,7 @@ builder.Services.AddScoped<IVoluntarioService, VoluntarioService>();
 builder.Services.AddScoped<IDoadorService, DoadorService>();
 builder.Services.AddScoped<IProjetoService, ProjetoService>();
 
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -124,7 +125,7 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Ativa Swagger SEMPRE (inclusive no ambiente de produção)
+// Swagger sempre ativado (inclusive em produção)
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
