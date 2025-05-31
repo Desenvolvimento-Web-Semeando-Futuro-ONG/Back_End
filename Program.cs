@@ -9,12 +9,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Ajuste de porta para funcionar no Render
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.UseUrls($"http://*:{port}");
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -24,15 +27,15 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     });
 
-// Configuração do CORS para mobile
-var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ??
-    new[] {
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://10.0.2.2", // Android Emulator
-        "capacitor://localhost",
-        "ionic://localhost"
-    };
+// Configuração do CORS para web/mobile
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? new[]
+{
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://10.0.2.2", // Android Emulator
+    "capacitor://localhost",
+    "ionic://localhost"
+};
 
 builder.Services.AddCors(options =>
 {
@@ -68,7 +71,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(key),
             ClockSkew = TimeSpan.Zero
         };
-
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
@@ -97,7 +99,7 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "API ONG", Version = "v1" });
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme.",
+        Description = "JWT Authorization header usando o esquema Bearer.",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.Http,
@@ -122,34 +124,17 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Habilita Swagger em qualquer ambiente (produção e desenvolvimento)
+// Ativa Swagger SEMPRE (inclusive no ambiente de produção)
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "API ONG v1");
-    c.RoutePrefix = "swagger"; 
+    c.RoutePrefix = "swagger";
 });
 
 app.UseHttpsRedirection();
-
 app.UseCors("MobilePolicy");
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
-try
-{
-    Process.Start(new ProcessStartInfo
-    {
-        FileName = "http://localhost:5189/swagger",
-        UseShellExecute = true
-    });
-}
-catch
-{
-    Console.WriteLine("Acesse: http://localhost:5189/swagger");
-}
-
-app.Run("http://localhost:5189");
+app.Run();
