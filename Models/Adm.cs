@@ -24,6 +24,14 @@ namespace Back_End.Models
             SenhaHash = BCrypt.Net.BCrypt.HashPassword(senha);
         }
 
+        public void RedefinirSenha(string novaSenha)
+        {
+            if (string.IsNullOrWhiteSpace(novaSenha))
+                throw new ArgumentException("Senha não pode ser vazia");
+
+            SenhaHash = BCrypt.Net.BCrypt.HashPassword(novaSenha); 
+        }
+
         public bool Autenticar(string senha)
         {
             if (this.SenhaHash != null && this.SenhaHash.Length == 44 && this.SenhaHash.EndsWith("="))
@@ -42,6 +50,5 @@ namespace Back_End.Models
 
             return BCrypt.Net.BCrypt.Verify(senha, this.SenhaHash);
         }
-
     }
 }

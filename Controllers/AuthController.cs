@@ -4,7 +4,6 @@ using Back_End.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace Back_End.Controllers
 {
     [ApiController]
@@ -32,12 +31,25 @@ namespace Back_End.Controllers
 
             if (adm.Autenticar(loginVM.Senha))
             {
-                await _context.SaveChangesAsync();
                 var token = _authService.GerarTokenAdm(adm);
                 return Ok(new { token });
             }
 
             return Unauthorized("Credenciais inválidas");
+        }
+
+        [HttpPost("solicitar-redefinicao")]
+        public async Task<IActionResult> SolicitarRedefinicaoSenha([FromBody] SolicitarRedefinicaoViewModel model)
+        {
+            var result = await _authService.SolicitarRedefinicaoSenha(model.Email);
+            return result ? Ok() : BadRequest();
+        }
+
+        [HttpPost("redefinir-senha")]
+        public async Task<IActionResult> RedefinirSenha([FromBody] RedefinirSenhaViewModel model)
+        {
+            var result = await _authService.RedefinirSenha(model);
+            return result ? Ok() : BadRequest();
         }
     }
 }

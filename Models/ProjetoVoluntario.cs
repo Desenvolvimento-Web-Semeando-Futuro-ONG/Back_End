@@ -19,7 +19,8 @@ public enum StatusInscricao
 {
     Pendente,
     Aprovado,
-    Rejeitado
+    Rejeitado,
+    Concluido
 }
 
 public enum StatusProjeto
