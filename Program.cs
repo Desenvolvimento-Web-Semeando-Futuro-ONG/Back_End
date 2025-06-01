@@ -12,11 +12,11 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configuração da porta
+// Porta para o Render
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 builder.WebHost.UseUrls($"http://*:{port}");
 
-// Configuração dos controllers
+// Controllers e JSON config
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -25,14 +25,11 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     });
 
-// Configuração do CORS
-var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
-var frontendUrl = builder.Configuration["FrontendUrl"];
-
-if (!string.IsNullOrEmpty(frontendUrl) && !allowedOrigins.Contains(frontendUrl))
-{
-    allowedOrigins = allowedOrigins.Append(frontendUrl).ToArray();
-}
+// CORS 
+var allowedOrigins = new[] {
+    "http://localhost:5173",
+   // "https://front-end-nome.onrender.com" 
+};
 
 builder.Services.AddCors(options =>
 {
@@ -41,31 +38,19 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials()
-              .WithExposedHeaders("Content-Disposition");
+              .AllowCredentials();
     });
-
-    // Política mais permissiva para desenvolvimento
-    if (builder.Environment.IsDevelopment())
-    {
-        options.AddPolicy("DevelopmentPolicy", policy =>
-        {
-            policy.AllowAnyOrigin()
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        });
-    }
 });
 
-// Configuração do banco de dados
+// PostgreSQL
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Configuração do MongoDB
+// MongoDB
 builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDB"));
 builder.Services.AddSingleton<MongoDBSettings>();
 
-// Configuração do JWT
+// JWT
 var key = Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Key"]!);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -81,6 +66,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(key),
             ClockSkew = TimeSpan.Zero
         };
+
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
@@ -94,7 +80,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// Configuração de cookies 
+// Cookie seguro
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.SameSite = SameSiteMode.None;
@@ -111,7 +97,7 @@ builder.Services.AddScoped<IVoluntarioService, VoluntarioService>();
 builder.Services.AddScoped<IDoadorService, DoadorService>();
 builder.Services.AddScoped<IProjetoService, ProjetoService>();
 
-// Configuração do Swagger
+// Swagger
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "API ONG", Version = "v1" });
@@ -153,16 +139,10 @@ app.UseSwaggerUI(c =>
 app.UseHttpsRedirection();
 app.UseRouting();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseCors("DevelopmentPolicy");
-}
-else
-{
-    app.UseCors("CorsPolicy");
-}
+app.UseCors("CorsPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 app.Run();
