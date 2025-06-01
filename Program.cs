@@ -12,11 +12,10 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Porta para o Render
+// Configuração de porta para ambiente do Render
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 builder.WebHost.UseUrls($"http://*:{port}");
 
-// Controllers e JSON config
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -26,9 +25,9 @@ builder.Services.AddControllers()
     });
 
 // CORS 
-var allowedOrigins = new[] {
-    "http://localhost:5173",
-   // "https://front-end-nome.onrender.com" 
+string[] allowedOrigins = new[]
+{
+    "http://localhost:5173"
 };
 
 builder.Services.AddCors(options =>
@@ -80,14 +79,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// Cookie seguro
+// Cookie seguro 
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.SameSite = SameSiteMode.None;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
 
-// Injeção de dependências
+// Injeção de dependência
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<GaleriaService>();
 builder.Services.AddScoped<IAdmService, AdmService>();
@@ -128,16 +127,16 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// Swagger UI
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "API ONG v1");
-    c.RoutePrefix = "swagger";
+    c.RoutePrefix = "swagger"; 
     c.ConfigObject.DisplayRequestDuration = true;
 });
 
 app.UseHttpsRedirection();
-app.UseRouting();
 
 app.UseCors("CorsPolicy");
 
@@ -145,4 +144,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
 app.Run();
