@@ -31,6 +31,14 @@ var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<stri
     "capacitor://localhost",
     "ionic://localhost"
 };
+
+var frontendUrl = builder.Configuration["FrontendUrl"];
+if (!string.IsNullOrEmpty(frontendUrl)
+    && !allowedOrigins.Contains(frontendUrl))
+{
+    allowedOrigins = allowedOrigins.Append(frontendUrl).ToArray();
+}
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowOrigins", policy =>
@@ -41,6 +49,16 @@ builder.Services.AddCors(options =>
               .AllowCredentials()
               .WithExposedHeaders("Content-Disposition");
     });
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AddPolicy("DevelopmentPolicy", policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+    }
 });
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -121,9 +139,19 @@ app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "API ONG v1");
     c.RoutePrefix = "swagger";
+
+    c.ConfigObject.DisplayRequestDuration = true;
 });
 
-app.UseCors("AllowOrigins");
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors("DevelopmentPolicy");
+}
+else
+{
+    app.UseCors("AllowOrigins");
+}
+
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
