@@ -29,8 +29,8 @@ string[] allowedOrigins = new[]
 {
     "http://localhost:5173",
     "http://localhost:5174",
-    "https://semeandoofuturo.vercel.app/",
-    "https://semearongfront-end.onrender.com/"
+    "https://semeandoofuturo.vercel.app",
+    "https://semearongfront-end.onrender.com"
 };
 
 builder.Services.AddCors(options =>
